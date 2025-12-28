@@ -40,19 +40,12 @@
 </head>
 <body class="min-h-screen flex flex-col relative pb-20">
 
-    <!-- 頂部設定區 (已更新：設定按鈕移至此處) -->
+    <!-- 頂部設定區 -->
     <div class="bg-white shadow-md p-4 flex flex-wrap items-center justify-between z-10">
         <h1 class="text-2xl font-bold text-blue-800 tracking-wider">長安小鐵人計時表</h1>
         
         <div class="flex items-center space-x-3 mt-2 sm:mt-0">
-            <!-- 設定與測試按鈕 -->
-            <button onclick="setGoogleScriptUrl()" class="text-gray-500 hover:text-blue-600 transition p-2 rounded-full hover:bg-gray-100 border border-transparent hover:border-gray-200" title="設定 Google 試算表連結與測試">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-            </button>
-
+            <!-- 這裡移除了設定按鈕，因為網址已經固定在程式碼中 -->
             <div class="bg-blue-100 text-blue-800 px-4 py-2 rounded-lg font-bold">
                 班級人數：24 人 (固定)
             </div>
@@ -135,15 +128,23 @@
     </div>
 
     <script>
+        // =========================================================================
+        // ▼▼▼▼▼ 請將您的 Google Apps Script 網址貼在下方的引號中 ▼▼▼▼▼
+        // =========================================================================
+        
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxWbQ7Hq6dRHJqDt4XSI4eHRxuVk07HGVSfDuSEezMc5xnq4NmlJRsckAW3Gu9UuYyXsg/exec"; 
+        
+        // 注意：網址結尾必須是 /exec
+        // =========================================================================
+
         // 全域變數
         const TOTAL_STUDENTS = 24; // 固定人數
         let timerInterval;
         let startTime = 0;
-        let runStartTimestamp = ""; // 儲存 "2023/10/27 10:00:00" 格式的開始時間
+        let runStartTimestamp = ""; 
         let elapsedTime = 0;
         let isRunning = false;
         let studentResults = {}; 
-        let googleScriptUrl = localStorage.getItem('googleScriptUrl') || ''; 
 
         // 頁面載入後初始化
         document.addEventListener('DOMContentLoaded', () => {
@@ -183,7 +184,6 @@
         // 取得當前時間字串 (用於欄位標題)
         function getCurrentDateTimeStr() {
             const now = new Date();
-            // 格式: YYYY/MM/DD HH:mm:ss
             return now.toLocaleString('zh-TW', { 
                 year: 'numeric', 
                 month: '2-digit', 
@@ -206,23 +206,19 @@
                 isRunning = true;
                 startTime = Date.now() - elapsedTime;
                 
-                // 紀錄本次跑步的開始時間 (作為 Excel 欄位標題)
                 if (!runStartTimestamp) {
                     runStartTimestamp = getCurrentDateTimeStr();
                     startTimeDisplay.textContent = `起跑時間：${runStartTimestamp}`;
                 }
                 
-                // 啟動計時迴圈
                 timerInterval = setInterval(() => {
                     elapsedTime = Date.now() - startTime;
                     document.getElementById('timerDisplay').textContent = formatTime(elapsedTime);
                 }, 30);
 
-                // 改變按鈕狀態
                 btn.textContent = '計時結束';
                 btn.className = 'mb-10 px-10 py-4 text-2xl font-bold rounded-full text-white shadow-lg transform transition hover:-translate-y-1 hover:shadow-xl bg-red-500 hover:bg-red-600 focus:outline-none ring-4 ring-red-200';
                 
-                // 啟用按鈕
                 studentBtns.forEach(b => {
                     if (!studentResults[b.textContent]) {
                         b.disabled = false;
@@ -251,8 +247,6 @@
             if (!isRunning) return;
 
             const currentTimeStr = formatTime(elapsedTime);
-            
-            // 記錄成績
             studentResults[seatNum] = currentTimeStr;
 
             const btn = document.getElementById(`student-${seatNum}`);
@@ -267,14 +261,10 @@
             const tableBody = document.getElementById('scoreTableBody');
             tableBody.innerHTML = '';
 
-            let hasData = false;
-
             for (let i = 1; i <= TOTAL_STUDENTS; i++) {
                 const time = studentResults[i] || '--:--.--';
                 const status = studentResults[i] ? '<span class="text-green-600 font-bold">已完成</span>' : '<span class="text-red-400">未完成</span>';
                 
-                if (studentResults[i]) hasData = true;
-
                 const row = `
                     <tr class="hover:bg-gray-50 transition">
                         <td class="font-bold text-lg">${i}</td>
@@ -329,59 +319,24 @@
             });
         }
 
-        // 手動設定 URL (包含測試連線)
-        async function setGoogleScriptUrl() {
-            const { value: url, isConfirmed } = await Swal.fire({
-                title: '設定 Apps Script 網址',
-                input: 'url',
-                inputValue: googleScriptUrl,
-                inputLabel: '請輸入部署後的 Web App URL (以 /exec 結尾)',
-                inputPlaceholder: 'https://script.google.com/macros/s/AKfycbxWbQ7Hq6dRHJqDt4XSI4eHRxuVk07HGVSfDuSEezMc5xnq4NmlJRsckAW3Gu9UuYyXsg/exec',
-                showCancelButton: true,
-                confirmButtonText: '儲存',
-                cancelButtonText: '取消',
-                footer: '<a href="#" id="testLink" class="text-blue-600 font-bold hover:underline" style="font-size: 1.1em;">🔍 點此測試連結是否有效 (開新視窗)</a>',
-                didOpen: () => {
-                    const testLink = Swal.getPopup().querySelector('#testLink');
-                    const input = Swal.getInput();
-                    
-                    testLink.onclick = (e) => {
-                        e.preventDefault();
-                        const currentUrl = input.value;
-                        if (!currentUrl) {
-                            Swal.showValidationMessage('請先貼上網址才能測試');
-                            return;
-                        }
-                        // 開啟新視窗測試 GET 請求
-                        window.open(currentUrl, '_blank');
-                    };
-                }
-            });
-
-            if (isConfirmed && url) {
-                if (!url.endsWith('/exec')) {
-                    Swal.fire('網址格式錯誤', '網址必須以 /exec 結尾，請檢查是否複製到編輯網址。', 'error');
-                    return;
-                }
-                googleScriptUrl = url;
-                localStorage.setItem('googleScriptUrl', url);
-                Swal.fire('已儲存', '新的網址已設定，請嘗試重新上傳。', 'success');
-            }
-        }
-
-        // === Google Sheets 上傳功能 (強化版) ===
+        // === Google Sheets 上傳功能 (硬寫入版) ===
         async function uploadToGoogleSheets() {
             if (Object.keys(studentResults).length === 0) {
                 Swal.fire('沒有資料', '請先進行計時並記錄成績', 'info');
                 return;
             }
 
-            if (!googleScriptUrl) {
-                await setGoogleScriptUrl();
-                if (!googleScriptUrl) return; 
+            // 檢查是否已設定網址
+            if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL.includes("EXAMPLE") || GOOGLE_SCRIPT_URL.length < 10) {
+                Swal.fire({
+                    title: '尚未設定網址',
+                    html: `請使用記事本打開這個 html 檔案，<br>搜尋 <b>GOOGLE_SCRIPT_URL</b>，<br>並將您的 Google Apps Script 網址填入。`,
+                    icon: 'error'
+                });
+                return;
             }
 
-            // 準備傳送的資料物件
+            // 準備傳送的資料
             const studentsData = [];
             for (let i = 1; i <= TOTAL_STUDENTS; i++) {
                 if (studentResults[i]) {
@@ -410,7 +365,7 @@
                 const formData = new FormData();
                 formData.append('payload', JSON.stringify(payload));
                 
-                await fetch(googleScriptUrl, {
+                await fetch(GOOGLE_SCRIPT_URL, {
                     method: 'POST',
                     body: formData,
                     mode: 'no-cors' 
@@ -419,17 +374,13 @@
                 Swal.fire({
                     title: '已發送請求',
                     html: `系統已發出儲存指令！<br><br>
-                           <span style="color: green; font-weight: bold;">請檢查您的 Google 試算表是否已更新。</span><br><br>
-                           <span class="text-sm text-gray-500">
-                           若沒反應，請點擊上方齒輪，使用「🔍 測試連結」功能，<br>
-                           確認是否出現「✅ 連線成功」字樣。
-                           </span>`,
+                           <span style="color: green; font-weight: bold;">請檢查您的 Google 試算表是否已更新。</span>`,
                     icon: 'success'
                 });
 
             } catch (error) {
                 console.error('Error:', error);
-                Swal.fire('發送失敗', '瀏覽器攔截了請求，請檢查網址是否正確，或是否網路中斷。', 'error');
+                Swal.fire('發送失敗', '請檢查您的網路連線，或確認網址是否正確。', 'error');
             }
         }
     </script>
