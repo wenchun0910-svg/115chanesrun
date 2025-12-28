@@ -16,12 +16,6 @@
             font-family: 'Noto Sans TC', sans-serif;
             background-color: #f0f9ff; /* 淺藍色背景 */
         }
-        /* 隱藏數字輸入框的箭頭 */
-        input::-webkit-outer-spin-button,
-        input::-webkit-inner-spin-button {
-            -webkit-appearance: none;
-            margin: 0;
-        }
         .btn-circle-student {
             transition: all 0.2s;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
@@ -51,12 +45,9 @@
         <h1 class="text-2xl font-bold text-blue-800 tracking-wider">長安小鐵人計時表</h1>
         
         <div class="flex items-center space-x-2 mt-2 sm:mt-0">
-            <label class="text-gray-700 font-medium">班級人數：</label>
-            <input type="number" id="studentCountInput" value="10" min="1" max="100" 
-                   class="border-2 border-blue-200 rounded-lg px-3 py-1 w-20 text-center focus:outline-none focus:border-blue-500 text-lg">
-            <button onclick="generateStudents()" class="bg-blue-100 text-blue-600 px-3 py-1 rounded-lg hover:bg-blue-200 text-sm font-bold">
-                生成按鈕
-            </button>
+            <div class="bg-blue-100 text-blue-800 px-4 py-2 rounded-lg font-bold">
+                班級人數：24 人 (固定)
+            </div>
         </div>
     </div>
 
@@ -69,6 +60,8 @@
                 00:00
             </div>
             <div class="text-gray-400 text-sm mt-1">分 : 秒 . 毫秒</div>
+            <!-- 顯示本次跑步的開始時間 -->
+            <div id="startTimeDisplay" class="text-blue-500 font-medium mt-2 h-6 text-sm"></div>
         </div>
 
         <!-- 開始/結束 按鈕 -->
@@ -78,7 +71,7 @@
         </button>
 
         <!-- 學生按鈕網格 -->
-        <div id="studentGrid" class="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-4 w-full max-w-5xl mb-8">
+        <div id="studentGrid" class="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-4 w-full max-w-5xl mb-8">
             <!-- 學生按鈕將由 JS 生成於此 -->
         </div>
 
@@ -133,14 +126,15 @@
         </div>
     </div>
 
-    <!-- 設定 Google Script URL 的隱藏 Modal -->
     <script>
         // 全域變數
+        const TOTAL_STUDENTS = 24; // 固定人數
         let timerInterval;
         let startTime = 0;
+        let runStartTimestamp = ""; // 儲存 "2023/10/27 10:00:00" 格式的開始時間
         let elapsedTime = 0;
         let isRunning = false;
-        let studentResults = {}; // 儲存格式: { seatNumber: "00:12.34" }
+        let studentResults = {}; 
         let googleScriptUrl = localStorage.getItem('googleScriptUrl') || ''; 
 
         // 頁面載入後初始化
@@ -148,14 +142,8 @@
             generateStudents();
         });
 
-        // 生成學生按鈕
+        // 生成學生按鈕 (固定 24 人)
         function generateStudents() {
-            if (isRunning) {
-                Swal.fire('警告', '計時進行中，請先重置再修改人數', 'warning');
-                return;
-            }
-
-            const count = document.getElementById('studentCountInput').value;
             const grid = document.getElementById('studentGrid');
             const tableBody = document.getElementById('scoreTableBody');
             
@@ -163,7 +151,7 @@
             tableBody.innerHTML = '';
             studentResults = {};
 
-            for (let i = 1; i <= count; i++) {
+            for (let i = 1; i <= TOTAL_STUDENTS; i++) {
                 // 創建圓形按鈕
                 const btn = document.createElement('button');
                 btn.id = `student-${i}`;
@@ -181,30 +169,52 @@
             const m = date.getUTCMinutes().toString().padStart(2, '0');
             const s = date.getUTCSeconds().toString().padStart(2, '0');
             const msText = Math.floor(date.getUTCMilliseconds() / 10).toString().padStart(2, '0');
-            return `${m}:${s}.${msText}`; // 顯示分:秒.毫秒
+            return `${m}:${s}.${msText}`;
+        }
+
+        // 取得當前時間字串 (用於欄位標題)
+        function getCurrentDateTimeStr() {
+            const now = new Date();
+            // 格式: YYYY/MM/DD HH:mm:ss
+            return now.toLocaleString('zh-TW', { 
+                year: 'numeric', 
+                month: '2-digit', 
+                day: '2-digit', 
+                hour: '2-digit', 
+                minute: '2-digit', 
+                second: '2-digit',
+                hour12: false 
+            });
         }
 
         // 切換計時器狀態 (開始/結束)
         function toggleTimer() {
             const btn = document.getElementById('mainControlBtn');
             const studentBtns = document.querySelectorAll('#studentGrid button');
+            const startTimeDisplay = document.getElementById('startTimeDisplay');
 
             if (!isRunning) {
                 // === 開始計時 ===
                 isRunning = true;
                 startTime = Date.now() - elapsedTime;
                 
+                // 紀錄本次跑步的開始時間 (作為 Excel 欄位標題)
+                if (!runStartTimestamp) {
+                    runStartTimestamp = getCurrentDateTimeStr();
+                    startTimeDisplay.textContent = `起跑時間：${runStartTimestamp}`;
+                }
+                
                 // 啟動計時迴圈
                 timerInterval = setInterval(() => {
                     elapsedTime = Date.now() - startTime;
                     document.getElementById('timerDisplay').textContent = formatTime(elapsedTime);
-                }, 30); // 每30ms更新一次畫面
+                }, 30);
 
                 // 改變按鈕狀態
                 btn.textContent = '計時結束';
                 btn.className = 'mb-10 px-10 py-4 text-2xl font-bold rounded-full text-white shadow-lg transform transition hover:-translate-y-1 hover:shadow-xl bg-red-500 hover:bg-red-600 focus:outline-none ring-4 ring-red-200';
                 
-                // 啟用所有尚未記錄成績的學生按鈕
+                // 啟用按鈕
                 studentBtns.forEach(b => {
                     if (!studentResults[b.textContent]) {
                         b.disabled = false;
@@ -213,7 +223,6 @@
                     }
                 });
 
-                // 隱藏結果區 (如果是重新開始)
                 document.getElementById('resultSection').classList.add('hidden');
 
             } else {
@@ -221,14 +230,10 @@
                 clearInterval(timerInterval);
                 isRunning = false;
 
-                // 改變按鈕狀態
                 btn.textContent = '計時開始';
                 btn.className = 'mb-10 px-10 py-4 text-2xl font-bold rounded-full text-white shadow-lg transform transition hover:-translate-y-1 hover:shadow-xl bg-green-500 hover:bg-green-600 focus:outline-none ring-4 ring-green-200';
 
-                // 禁用所有按鈕
                 studentBtns.forEach(b => b.disabled = true);
-
-                // 生成並顯示表格
                 renderResultTable();
             }
         }
@@ -242,25 +247,21 @@
             // 記錄成績
             studentResults[seatNum] = currentTimeStr;
 
-            // 更新按鈕外觀 (變綠色代表已記錄)
             const btn = document.getElementById(`student-${seatNum}`);
             btn.disabled = true;
             btn.classList.remove('text-blue-600', 'border-blue-400', 'hover:bg-blue-50', 'bg-white');
             btn.classList.add('bg-green-500', 'text-white', 'border-green-600', 'scale-95');
-            
-            // 可選：加上已完成標記
             btn.innerHTML = `${seatNum}<br><span class="text-xs">${currentTimeStr.split('.')[0]}</span>`;
         }
 
         // 渲染結果表格
         function renderResultTable() {
             const tableBody = document.getElementById('scoreTableBody');
-            const totalStudents = document.getElementById('studentCountInput').value;
             tableBody.innerHTML = '';
 
             let hasData = false;
 
-            for (let i = 1; i <= totalStudents; i++) {
+            for (let i = 1; i <= TOTAL_STUDENTS; i++) {
                 const time = studentResults[i] || '--:--.--';
                 const status = studentResults[i] ? '<span class="text-green-600 font-bold">已完成</span>' : '<span class="text-red-400">未完成</span>';
                 
@@ -276,11 +277,9 @@
                 tableBody.innerHTML += row;
             }
 
-            // 顯示結果區塊
             const resultSection = document.getElementById('resultSection');
             resultSection.classList.remove('hidden');
             
-            // 捲動到表格
             setTimeout(() => {
                 resultSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }, 100);
@@ -303,19 +302,18 @@
                     isRunning = false;
                     startTime = 0;
                     elapsedTime = 0;
+                    runStartTimestamp = "";
                     studentResults = {};
                     
                     document.getElementById('timerDisplay').textContent = "00:00.00";
+                    document.getElementById('startTimeDisplay').textContent = "";
                     
-                    // 重置主按鈕
                     const mainBtn = document.getElementById('mainControlBtn');
                     mainBtn.textContent = '計時開始';
                     mainBtn.className = 'mb-10 px-10 py-4 text-2xl font-bold rounded-full text-white shadow-lg transform transition hover:-translate-y-1 hover:shadow-xl bg-green-500 hover:bg-green-600 focus:outline-none ring-4 ring-green-200';
 
-                    // 隱藏表格
                     document.getElementById('resultSection').classList.add('hidden');
                     
-                    // 重新生成學生按鈕
                     generateStudents();
                     
                     Swal.fire('已重置', '資料已清除', 'success');
@@ -323,22 +321,19 @@
             });
         }
 
-        // === Google Sheets 上傳功能 ===
+        // === Google Sheets 上傳功能 (更新版) ===
         async function uploadToGoogleSheets() {
-            // 檢查是否有資料
             if (Object.keys(studentResults).length === 0) {
                 Swal.fire('沒有資料', '請先進行計時並記錄成績', 'info');
                 return;
             }
 
-            // 檢查是否已設定 URL
             if (!googleScriptUrl) {
                 const { value: url } = await Swal.fire({
                     title: '設定 Google Apps Script URL',
                     input: 'url',
-                    inputLabel: '請輸入您的 Google Apps Script 部署網址 (Web App URL)',
-                    inputPlaceholder: 'https://script.google.com/macros/s/AKfycby7iYADgMr-RLnIqzDc9a_pdQsru1GxRWbjV7_2oswzGiz5IMAw2diXCyQ1gUqD4d4DFw/exec',
-                    text: '初次使用需設定後端網址 (請參閱說明文件)',
+                    inputLabel: '請輸入您的 Google Apps Script 部署網址',
+                    inputPlaceholder: 'https://script.google.com/macros/s/AKfycbykYeh_DZm90wM1l0KChAG8KspLbq7XQ1ASYOmUyTV36aQ3wEQt3B-cCyrrBz30-9o0gQ/exec',
                     showCancelButton: true
                 });
 
@@ -346,56 +341,52 @@
                     googleScriptUrl = url;
                     localStorage.setItem('googleScriptUrl', url);
                 } else {
-                    return; // 使用者取消
+                    return;
                 }
             }
 
-            // 準備資料
-            // 為了符合格式：第一欄座號，第二欄第三欄...依序儲存
-            // 我們傳送的資料格式為 JSON Array: [{seat: 1, time: "00:10"}, {seat: 2, time: "00:12"}]
-            const dataPayload = [];
-            const totalStudents = document.getElementById('studentCountInput').value;
-            
-            for (let i = 1; i <= totalStudents; i++) {
+            // 準備傳送的資料物件
+            // 包含：start_time (作為欄位名稱) 和 students (成績列表)
+            const studentsData = [];
+            for (let i = 1; i <= TOTAL_STUDENTS; i++) {
                 if (studentResults[i]) {
-                    dataPayload.push({
+                    studentsData.push({
                         seat: i,
                         time: studentResults[i]
                     });
                 }
             }
 
+            const payload = {
+                header: runStartTimestamp || getCurrentDateTimeStr(), // 使用計時開始的時間作為標題
+                data: studentsData
+            };
+
             Swal.fire({
                 title: '上傳中...',
-                text: '正在將資料傳送至 Google 試算表',
+                text: `正在上傳，欄位標題為：${payload.header}`,
                 allowOutsideClick: false,
                 didOpen: () => {
                     Swal.showLoading();
                 }
             });
 
-            // 發送請求
             try {
-                // 由於跨域問題 (CORS)，通常使用 no-cors 模式發送，或使用 text/plain
-                // 這裡使用標準 fetch，配合 Apps Script 的 doGet/doPost 處理
-                
                 const formData = new FormData();
-                formData.append('data', JSON.stringify(dataPayload));
+                // 將整個 payload 物件轉為 JSON 字串
+                formData.append('payload', JSON.stringify(payload));
                 
-                // 注意：fetch 到 Google Apps Script 常常會有 CORS 問題
-                // 使用 no-cors 模式意味著我們拿不到回應內容，但請求會發送成功
                 await fetch(googleScriptUrl, {
                     method: 'POST',
                     body: formData,
                     mode: 'no-cors' 
                 });
 
-                Swal.fire('成功', '資料已送出至背景處理 (若未出現請檢查 Apps Script 設定)', 'success');
+                Swal.fire('成功', '資料已送出！請檢查試算表是否新增了一欄時間。', 'success');
 
             } catch (error) {
                 console.error('Error:', error);
-                Swal.fire('上傳失敗', '無法連接至 Google 試算表，請檢查網址或網路', 'error');
-                // 失敗時允許重新設定 URL
+                Swal.fire('上傳失敗', '無法連接至 Google 試算表', 'error');
                 googleScriptUrl = ''; 
                 localStorage.removeItem('googleScriptUrl');
             }
