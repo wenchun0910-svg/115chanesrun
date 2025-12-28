@@ -40,11 +40,19 @@
 </head>
 <body class="min-h-screen flex flex-col relative pb-20">
 
-    <!-- 頂部設定區 -->
+    <!-- 頂部設定區 (已更新：設定按鈕移至此處) -->
     <div class="bg-white shadow-md p-4 flex flex-wrap items-center justify-between z-10">
         <h1 class="text-2xl font-bold text-blue-800 tracking-wider">長安小鐵人計時表</h1>
         
-        <div class="flex items-center space-x-2 mt-2 sm:mt-0">
+        <div class="flex items-center space-x-3 mt-2 sm:mt-0">
+            <!-- 設定與測試按鈕 -->
+            <button onclick="setGoogleScriptUrl()" class="text-gray-500 hover:text-blue-600 transition p-2 rounded-full hover:bg-gray-100 border border-transparent hover:border-gray-200" title="設定 Google 試算表連結與測試">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+            </button>
+
             <div class="bg-blue-100 text-blue-800 px-4 py-2 rounded-lg font-bold">
                 班級人數：24 人 (固定)
             </div>
@@ -87,7 +95,7 @@
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
                         </svg>
-                        上傳至 Google 試算表
+                        上傳資料
                     </button>
                 </div>
                 
@@ -321,7 +329,47 @@
             });
         }
 
-        // === Google Sheets 上傳功能 (更新版) ===
+        // 手動設定 URL (包含測試連線)
+        async function setGoogleScriptUrl() {
+            const { value: url, isConfirmed } = await Swal.fire({
+                title: '設定 Apps Script 網址',
+                input: 'url',
+                inputValue: googleScriptUrl,
+                inputLabel: '請輸入部署後的 Web App URL (以 /exec 結尾)',
+                inputPlaceholder: 'https://script.google.com/macros/s/AKfycbxWbQ7Hq6dRHJqDt4XSI4eHRxuVk07HGVSfDuSEezMc5xnq4NmlJRsckAW3Gu9UuYyXsg/exec',
+                showCancelButton: true,
+                confirmButtonText: '儲存',
+                cancelButtonText: '取消',
+                footer: '<a href="#" id="testLink" class="text-blue-600 font-bold hover:underline" style="font-size: 1.1em;">🔍 點此測試連結是否有效 (開新視窗)</a>',
+                didOpen: () => {
+                    const testLink = Swal.getPopup().querySelector('#testLink');
+                    const input = Swal.getInput();
+                    
+                    testLink.onclick = (e) => {
+                        e.preventDefault();
+                        const currentUrl = input.value;
+                        if (!currentUrl) {
+                            Swal.showValidationMessage('請先貼上網址才能測試');
+                            return;
+                        }
+                        // 開啟新視窗測試 GET 請求
+                        window.open(currentUrl, '_blank');
+                    };
+                }
+            });
+
+            if (isConfirmed && url) {
+                if (!url.endsWith('/exec')) {
+                    Swal.fire('網址格式錯誤', '網址必須以 /exec 結尾，請檢查是否複製到編輯網址。', 'error');
+                    return;
+                }
+                googleScriptUrl = url;
+                localStorage.setItem('googleScriptUrl', url);
+                Swal.fire('已儲存', '新的網址已設定，請嘗試重新上傳。', 'success');
+            }
+        }
+
+        // === Google Sheets 上傳功能 (強化版) ===
         async function uploadToGoogleSheets() {
             if (Object.keys(studentResults).length === 0) {
                 Swal.fire('沒有資料', '請先進行計時並記錄成績', 'info');
@@ -329,24 +377,11 @@
             }
 
             if (!googleScriptUrl) {
-                const { value: url } = await Swal.fire({
-                    title: '設定 Google Apps Script URL',
-                    input: 'url',
-                    inputLabel: '請輸入您的 Google Apps Script 部署網址',
-                    inputPlaceholder: 'https://script.google.com/macros/s/AKfycbxWbQ7Hq6dRHJqDt4XSI4eHRxuVk07HGVSfDuSEezMc5xnq4NmlJRsckAW3Gu9UuYyXsg/exec',
-                    showCancelButton: true
-                });
-
-                if (url) {
-                    googleScriptUrl = url;
-                    localStorage.setItem('googleScriptUrl', url);
-                } else {
-                    return;
-                }
+                await setGoogleScriptUrl();
+                if (!googleScriptUrl) return; 
             }
 
             // 準備傳送的資料物件
-            // 包含：start_time (作為欄位名稱) 和 students (成績列表)
             const studentsData = [];
             for (let i = 1; i <= TOTAL_STUDENTS; i++) {
                 if (studentResults[i]) {
@@ -358,13 +393,13 @@
             }
 
             const payload = {
-                header: runStartTimestamp || getCurrentDateTimeStr(), // 使用計時開始的時間作為標題
+                header: runStartTimestamp || getCurrentDateTimeStr(), 
                 data: studentsData
             };
 
             Swal.fire({
-                title: '上傳中...',
-                text: `正在上傳，欄位標題為：${payload.header}`,
+                title: '資料傳送中...',
+                html: '正在將資料送往 Google 試算表...<br>請勿關閉視窗。',
                 allowOutsideClick: false,
                 didOpen: () => {
                     Swal.showLoading();
@@ -373,7 +408,6 @@
 
             try {
                 const formData = new FormData();
-                // 將整個 payload 物件轉為 JSON 字串
                 formData.append('payload', JSON.stringify(payload));
                 
                 await fetch(googleScriptUrl, {
@@ -382,16 +416,22 @@
                     mode: 'no-cors' 
                 });
 
-                Swal.fire('成功', '資料已送出！請檢查試算表是否新增了一欄時間。', 'success');
+                Swal.fire({
+                    title: '已發送請求',
+                    html: `系統已發出儲存指令！<br><br>
+                           <span style="color: green; font-weight: bold;">請檢查您的 Google 試算表是否已更新。</span><br><br>
+                           <span class="text-sm text-gray-500">
+                           若沒反應，請點擊上方齒輪，使用「🔍 測試連結」功能，<br>
+                           確認是否出現「✅ 連線成功」字樣。
+                           </span>`,
+                    icon: 'success'
+                });
 
             } catch (error) {
                 console.error('Error:', error);
-                Swal.fire('上傳失敗', '無法連接至 Google 試算表', 'error');
-                googleScriptUrl = ''; 
-                localStorage.removeItem('googleScriptUrl');
+                Swal.fire('發送失敗', '瀏覽器攔截了請求，請檢查網址是否正確，或是否網路中斷。', 'error');
             }
         }
     </script>
 </body>
 </html>
-
