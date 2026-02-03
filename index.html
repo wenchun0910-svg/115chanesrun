@@ -102,6 +102,9 @@
                     </button>
                 </div>
                 <p class="text-center text-gray-500 text-sm mt-3" id="queryStatusText">請選擇週次並點擊查詢</p>
+                <div class="text-center mt-2 text-xs text-gray-400">
+                    * 如果出現失敗，請檢查 Google Script 部署權限是否為「所有人」
+                </div>
             </div>
 
             <div id="queryResultContainer" class="w-full bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200 hidden">
@@ -120,7 +123,7 @@
 
     </div>
 
-    <!-- 底部功能區 (僅在計時模式顯示重置) -->
+    <!-- 底部功能區 -->
     <div class="fixed bottom-0 left-0 w-full p-4 pointer-events-none flex justify-between items-end z-20">
         <button id="resetBtn" onclick="resetAll()" class="pointer-events-auto bg-red-500 text-white px-6 py-2 rounded-full shadow-lg hover:bg-red-600 font-bold transition flex items-center gap-2">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -138,7 +141,7 @@
         // ▼▼▼▼▼ 請將您的 Google Apps Script 網址貼在下方 ▼▼▼▼▼
         // =========================================================================
         
-        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyx4TJb7GDQQK4CAOynp532OJOcxskTTQ4lTRpf-hEHsY9VAiY4--fbitAFLyJLyyry7A/exec"; 
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx3g6QTe9WmylwUJFQKad6kssAL9_pTbu4U0Oic48XCanjX8B7SKGzHGP7OnLDnegX-Kw/exec"; 
         
         // =========================================================================
 
@@ -152,13 +155,11 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             generateStudents();
-            // 設定預設查詢週次為本週
             const today = new Date();
             const weekString = getWeekString(today);
             document.getElementById('queryWeekInput').value = weekString;
         });
 
-        // === 頁籤切換功能 ===
         function switchTab(tabName) {
             const timerSection = document.getElementById('timerSection');
             const querySection = document.getElementById('querySection');
@@ -316,7 +317,6 @@
             if (!weekInput) { Swal.fire('請選擇週次', '', 'warning'); return; }
             if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL.includes("EXAMPLE") || GOOGLE_SCRIPT_URL.length < 10) { Swal.fire({title: '尚未設定網址', html: `請修改 html 中的 GOOGLE_SCRIPT_URL`, icon: 'error'}); return; }
 
-            // 計算該週的起始與結束日期 (週一到週日)
             const [year, week] = weekInput.split('-W').map(Number);
             const weekStart = getDateOfWeek(week, year);
             const weekEnd = new Date(weekStart);
@@ -329,25 +329,33 @@
             Swal.fire({ title: '查詢中...', text: '正在從 Google 試算表讀取資料', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
             try {
-                // 使用 GET 請求獲取資料
-                const response = await fetch(GOOGLE_SCRIPT_URL);
+                // 使用 timestamp 參數避免快取
+                const fetchUrl = GOOGLE_SCRIPT_URL + (GOOGLE_SCRIPT_URL.includes('?') ? '&' : '?') + 't=' + new Date().getTime();
+                
+                const response = await fetch(fetchUrl);
+                
+                if (!response.ok) {
+                    throw new Error('網路回應不正常 (Status: ' + response.status + ')');
+                }
+
                 const json = await response.json();
 
                 if (json.status !== 'success') { throw new Error(json.message || '讀取失敗'); }
                 
-                const rawData = json.data; // 2D 陣列: [ ["座號", "2023...", ...], [1, "00:12", ...], ... ]
+                const rawData = json.data; 
                 if (!rawData || rawData.length === 0) { throw new Error('表格是空的'); }
 
-                const headers = rawData[0]; // 第一列是標題 (時間)
-                const rows = rawData.slice(1); // 剩下的列是學生成績
+                const headers = rawData[0]; 
+                const rows = rawData.slice(1); 
 
-                // 找出符合該週的欄位索引 (Index)
-                // 假設第一欄 (Index 0) 是座號，從 Index 1 開始是時間標題
                 const matchedIndices = [];
                 for (let i = 1; i < headers.length; i++) {
                     const colDate = new Date(headers[i]);
-                    if (!isNaN(colDate) && colDate >= weekStart && colDate <= weekEnd) {
-                        matchedIndices.push(i);
+                    // 寬鬆判斷：如果有日期且有效
+                    if (!isNaN(colDate.getTime())) {
+                        if (colDate >= weekStart && colDate <= weekEnd) {
+                            matchedIndices.push(i);
+                        }
                     }
                 }
 
@@ -358,14 +366,11 @@
                     return;
                 }
 
-                // 建構表格
                 const tableHead = document.getElementById('queryTableHead');
                 const tableBody = document.getElementById('queryTableBody');
                 
-                // 1. 表頭: 座號 + 符合的日期
                 let headHtml = '<tr><th class="w-20">座號</th>';
                 matchedIndices.forEach(idx => {
-                    // 簡化標題顯示，只顯示日期與時間，去掉年份如果太長
                     const d = new Date(headers[idx]);
                     const displayStr = `${d.getMonth()+1}/${d.getDate()} ${d.getHours()}:${d.getMinutes().toString().padStart(2,'0')}`;
                     headHtml += `<th>${displayStr}</th>`;
@@ -373,10 +378,7 @@
                 headHtml += '</tr>';
                 tableHead.innerHTML = headHtml;
 
-                // 2. 內容: 每個學生的成績
                 let bodyHtml = '';
-                // 為了讓座號排序 (Google Sheet 讀出來可能是亂的，或是空的)，我們固定產生 1~24 號
-                // 先把 rawData 轉成 map 方便查找: { "1": rowData, "2": rowData }
                 const studentMap = {};
                 rows.forEach(row => {
                     if(row[0]) studentMap[row[0].toString()] = row;
@@ -393,7 +395,6 @@
                         if (rowData && rowData[idx]) {
                             time = rowData[idx];
                         }
-                        // 如果有成績，顯示綠色
                         const colorClass = time !== '--' ? 'text-blue-600 font-mono font-bold' : 'text-gray-300';
                         rowHtml += `<td class="${colorClass}">${time}</td>`;
                     });
@@ -402,19 +403,21 @@
                 }
                 tableBody.innerHTML = bodyHtml;
 
-                // 顯示結果
                 document.getElementById('queryResultContainer').classList.remove('hidden');
                 statusText.textContent = `查詢完成，共找到 ${matchedIndices.length} 筆紀錄`;
                 Swal.close();
 
             } catch (error) {
                 console.error(error);
-                Swal.fire('查詢失敗', '無法讀取資料，請確認 Google Apps Script 已更新且權限正確。\n' + error.message, 'error');
+                let msg = '請確認 Google Apps Script 已更新且權限正確 (所有人/Anyone)。';
+                if (error.message.includes('Failed to fetch')) {
+                    msg += ' <br><b>(瀏覽器攔截了連線，通常是因為權限未設為公開)</b>';
+                }
+                Swal.fire('查詢失敗', msg + '<br><span class="text-xs text-red-500">' + error.message + '</span>', 'error');
                 statusText.textContent = '查詢發生錯誤';
             }
         }
 
-        // 輔助函式：取得 ISO 週次的週一日期
         function getDateOfWeek(w, y) {
             const d = new Date(y, 0, 1 + (w - 1) * 7);
             const dayOfWeek = d.getDay();
@@ -434,7 +437,6 @@
             const weekNo = Math.ceil(( ( (d - yearStart) / 86400000) + 1)/7);
             return `${d.getUTCFullYear()}-W${weekNo.toString().padStart(2, '0')}`;
         }
-
     </script>
 </body>
 </html>
