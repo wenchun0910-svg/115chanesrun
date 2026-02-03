@@ -4,105 +4,114 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>長安小鐵人計時表</title>
-    <!-- 引入 Tailwind CSS 進行美化 -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- 引入字型 -->
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
-    <!-- 引入 SweetAlert2 用於漂亮的提示框 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     
     <style>
-        body {
-            font-family: 'Noto Sans TC', sans-serif;
-            background-color: #f0f9ff; /* 淺藍色背景 */
-        }
-        .btn-circle-student {
-            transition: all 0.2s;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-        }
-        .btn-circle-student:active {
-            transform: scale(0.95);
-        }
-        /* 表格樣式 */
-        .result-table th, .result-table td {
-            border: 1px solid #e2e8f0;
-            padding: 8px;
-            text-align: center;
-        }
-        .result-table th {
-            background-color: #3b82f6;
-            color: white;
-        }
-        .result-table tr:nth-child(even) {
-            background-color: #f8fafc;
-        }
+        body { font-family: 'Noto Sans TC', sans-serif; background-color: #f0f9ff; }
+        .btn-circle-student { transition: all 0.2s; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        .btn-circle-student:active { transform: scale(0.95); }
+        .result-table th, .result-table td { border: 1px solid #e2e8f0; padding: 8px; text-align: center; white-space: nowrap; }
+        .result-table th { background-color: #3b82f6; color: white; position: sticky; top: 0; }
+        .result-table tr:nth-child(even) { background-color: #f8fafc; }
+        
+        /* 頁籤樣式 */
+        .tab-btn { @apply px-6 py-2 font-bold text-gray-500 border-b-4 border-transparent hover:text-blue-600 transition; }
+        .tab-btn.active { @apply text-blue-600 border-blue-600; }
     </style>
 </head>
 <body class="min-h-screen flex flex-col relative pb-20">
 
-    <!-- 頂部設定區 -->
-    <div class="bg-white shadow-md p-4 flex flex-wrap items-center justify-between z-10">
-        <h1 class="text-2xl font-bold text-blue-800 tracking-wider">長安小鐵人計時表</h1>
-        
-        <div class="flex items-center space-x-3 mt-2 sm:mt-0">
-            <!-- 這裡移除了設定按鈕，因為網址已經固定在程式碼中 -->
-            <div class="bg-blue-100 text-blue-800 px-4 py-2 rounded-lg font-bold">
+    <!-- 頂部導航與設定 -->
+    <div class="bg-white shadow-md z-20">
+        <div class="p-4 flex flex-wrap items-center justify-between">
+            <h1 class="text-2xl font-bold text-blue-800 tracking-wider">長安小鐵人計時表</h1>
+            <div class="bg-blue-100 text-blue-800 px-4 py-2 rounded-lg font-bold text-sm">
                 班級人數：24 人 (固定)
             </div>
+        </div>
+        
+        <!-- 頁籤切換 -->
+        <div class="flex justify-center space-x-4 bg-gray-50 border-t border-gray-100">
+            <button onclick="switchTab('timer')" id="tab-timer" class="tab-btn active">⏱️ 計時模式</button>
+            <button onclick="switchTab('query')" id="tab-query" class="tab-btn">📊 查詢紀錄</button>
         </div>
     </div>
 
     <!-- 主要內容區 -->
-    <div class="flex-grow container mx-auto px-4 py-8 flex flex-col items-center">
+    <div class="flex-grow container mx-auto px-4 py-8 flex flex-col items-center w-full">
 
-        <!-- 計時器顯示 -->
-        <div class="mb-6 text-center">
-            <div id="timerDisplay" class="text-7xl sm:text-8xl font-mono font-bold text-gray-800 tracking-widest tabular-nums drop-shadow-sm">
-                00:00
+        <!-- ======================= 計時模式區塊 ======================= -->
+        <div id="timerSection" class="w-full flex flex-col items-center">
+            <div class="mb-6 text-center">
+                <div id="timerDisplay" class="text-7xl sm:text-8xl font-mono font-bold text-gray-800 tracking-widest tabular-nums drop-shadow-sm">
+                    00:00
+                </div>
+                <div class="text-gray-400 text-sm mt-1">分 : 秒 . 毫秒</div>
+                <div id="startTimeDisplay" class="text-blue-500 font-medium mt-2 h-6 text-sm"></div>
             </div>
-            <div class="text-gray-400 text-sm mt-1">分 : 秒 . 毫秒</div>
-            <!-- 顯示本次跑步的開始時間 -->
-            <div id="startTimeDisplay" class="text-blue-500 font-medium mt-2 h-6 text-sm"></div>
+
+            <button id="mainControlBtn" onclick="toggleTimer()" 
+                    class="mb-10 px-10 py-4 text-2xl font-bold rounded-full text-white shadow-lg transform transition hover:-translate-y-1 hover:shadow-xl bg-green-500 hover:bg-green-600 focus:outline-none ring-4 ring-green-200">
+                計時開始
+            </button>
+
+            <div id="studentGrid" class="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-4 w-full max-w-5xl mb-8">
+                <!-- 按鈕由 JS 生成 -->
+            </div>
+
+            <div id="resultSection" class="w-full max-w-3xl hidden animate-fade-in-up">
+                <div class="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
+                    <div class="p-4 bg-blue-50 border-b border-blue-100 flex justify-between items-center">
+                        <h3 class="text-lg font-bold text-blue-800">⏱️ 本次成績</h3>
+                        <button onclick="uploadToGoogleSheets()" class="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 text-sm font-bold shadow-sm transition">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                            </svg>
+                            上傳資料
+                        </button>
+                    </div>
+                    <div class="overflow-x-auto p-4">
+                        <table class="w-full result-table" id="scoreTable">
+                            <thead>
+                                <tr>
+                                    <th class="w-1/3">座號</th>
+                                    <th class="w-1/3">成績</th>
+                                    <th class="w-1/3">狀態</th>
+                                </tr>
+                            </thead>
+                            <tbody id="scoreTableBody" class="text-gray-700"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <!-- 開始/結束 按鈕 -->
-        <button id="mainControlBtn" onclick="toggleTimer()" 
-                class="mb-10 px-10 py-4 text-2xl font-bold rounded-full text-white shadow-lg transform transition hover:-translate-y-1 hover:shadow-xl bg-green-500 hover:bg-green-600 focus:outline-none ring-4 ring-green-200">
-            計時開始
-        </button>
-
-        <!-- 學生按鈕網格 -->
-        <div id="studentGrid" class="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-4 w-full max-w-5xl mb-8">
-            <!-- 學生按鈕將由 JS 生成於此 -->
-        </div>
-
-        <!-- 成績表格 (預設隱藏) -->
-        <div id="resultSection" class="w-full max-w-3xl hidden animate-fade-in-up">
-            <div class="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
-                <div class="p-4 bg-blue-50 border-b border-blue-100 flex justify-between items-center">
-                    <h3 class="text-lg font-bold text-blue-800">⏱️ 成績列表</h3>
-                    
-                    <!-- Google Sheets 上傳按鈕 -->
-                    <button onclick="uploadToGoogleSheets()" id="uploadBtn" 
-                            class="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 text-sm font-bold shadow-sm transition">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+        <!-- ======================= 查詢模式區塊 ======================= -->
+        <div id="querySection" class="w-full flex-col items-center hidden max-w-5xl">
+            <div class="bg-white p-6 rounded-xl shadow-lg w-full mb-6 border border-gray-200">
+                <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+                    <label class="font-bold text-gray-700">選擇查詢週次：</label>
+                    <input type="week" id="queryWeekInput" class="border-2 border-blue-200 rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500">
+                    <button onclick="fetchAndFilterData()" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 font-bold shadow-md transition flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                         </svg>
-                        上傳資料
+                        查詢
                     </button>
                 </div>
-                
-                <div class="overflow-x-auto p-4">
-                    <table class="w-full result-table" id="scoreTable">
-                        <thead>
-                            <tr>
-                                <th class="w-1/3">座號</th>
-                                <th class="w-1/3">成績</th>
-                                <th class="w-1/3">狀態</th>
-                            </tr>
+                <p class="text-center text-gray-500 text-sm mt-3" id="queryStatusText">請選擇週次並點擊查詢</p>
+            </div>
+
+            <div id="queryResultContainer" class="w-full bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200 hidden">
+                <div class="overflow-x-auto max-h-[60vh]">
+                    <table class="w-full result-table" id="queryTable">
+                        <thead id="queryTableHead">
+                            <!-- 動態生成表頭 -->
                         </thead>
-                        <tbody id="scoreTableBody" class="text-gray-700">
-                            <!-- 成績將由 JS 插入 -->
+                        <tbody id="queryTableBody" class="text-gray-700">
+                            <!-- 動態生成內容 -->
                         </tbody>
                     </table>
                 </div>
@@ -111,34 +120,29 @@
 
     </div>
 
-    <!-- 底部功能區 -->
+    <!-- 底部功能區 (僅在計時模式顯示重置) -->
     <div class="fixed bottom-0 left-0 w-full p-4 pointer-events-none flex justify-between items-end z-20">
-        <!-- 重置按鈕 (左下) -->
-        <button onclick="resetAll()" class="pointer-events-auto bg-red-500 text-white px-6 py-2 rounded-full shadow-lg hover:bg-red-600 font-bold transition flex items-center gap-2">
+        <button id="resetBtn" onclick="resetAll()" class="pointer-events-auto bg-red-500 text-white px-6 py-2 rounded-full shadow-lg hover:bg-red-600 font-bold transition flex items-center gap-2">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
             </svg>
             重置
         </button>
-
-        <!-- 水印 (右下) -->
-        <div class="bg-white/80 backdrop-blur px-4 py-2 rounded-lg shadow-sm border border-gray-100 text-gray-500 font-serif italic pointer-events-auto">
+        <div class="bg-white/80 backdrop-blur px-4 py-2 rounded-lg shadow-sm border border-gray-100 text-gray-500 font-serif italic pointer-events-auto ml-auto">
             文君製作
         </div>
     </div>
 
     <script>
         // =========================================================================
-        // ▼▼▼▼▼ 請將您的 Google Apps Script 網址貼在下方的引號中 ▼▼▼▼▼
+        // ▼▼▼▼▼ 請將您的 Google Apps Script 網址貼在下方 ▼▼▼▼▼
         // =========================================================================
         
-        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxWbQ7Hq6dRHJqDt4XSI4eHRxuVk07HGVSfDuSEezMc5xnq4NmlJRsckAW3Gu9UuYyXsg/exec"; 
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyx4TJb7GDQQK4CAOynp532OJOcxskTTQ4lTRpf-hEHsY9VAiY4--fbitAFLyJLyyry7A/exec"; 
         
-        // 注意：網址結尾必須是 /exec
         // =========================================================================
 
-        // 全域變數
-        const TOTAL_STUDENTS = 24; // 固定人數
+        const TOTAL_STUDENTS = 24;
         let timerInterval;
         let startTime = 0;
         let runStartTimestamp = ""; 
@@ -146,33 +150,55 @@
         let isRunning = false;
         let studentResults = {}; 
 
-        // 頁面載入後初始化
         document.addEventListener('DOMContentLoaded', () => {
             generateStudents();
+            // 設定預設查詢週次為本週
+            const today = new Date();
+            const weekString = getWeekString(today);
+            document.getElementById('queryWeekInput').value = weekString;
         });
 
-        // 生成學生按鈕 (固定 24 人)
+        // === 頁籤切換功能 ===
+        function switchTab(tabName) {
+            const timerSection = document.getElementById('timerSection');
+            const querySection = document.getElementById('querySection');
+            const resetBtn = document.getElementById('resetBtn');
+            const tabTimer = document.getElementById('tab-timer');
+            const tabQuery = document.getElementById('tab-query');
+
+            if (tabName === 'timer') {
+                timerSection.classList.remove('hidden');
+                querySection.classList.add('hidden');
+                resetBtn.classList.remove('hidden');
+                tabTimer.classList.add('active');
+                tabQuery.classList.remove('active');
+            } else {
+                timerSection.classList.add('hidden');
+                querySection.classList.remove('hidden');
+                resetBtn.classList.add('hidden');
+                tabTimer.classList.remove('active');
+                tabQuery.classList.add('active');
+            }
+        }
+
+        // === 計時器邏輯 ===
         function generateStudents() {
             const grid = document.getElementById('studentGrid');
             const tableBody = document.getElementById('scoreTableBody');
-            
             grid.innerHTML = '';
             tableBody.innerHTML = '';
             studentResults = {};
-
             for (let i = 1; i <= TOTAL_STUDENTS; i++) {
-                // 創建圓形按鈕
                 const btn = document.createElement('button');
                 btn.id = `student-${i}`;
                 btn.className = 'btn-circle-student w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-white border-4 border-gray-200 text-xl font-bold text-gray-400 flex items-center justify-center focus:outline-none';
                 btn.textContent = i;
                 btn.onclick = () => recordTime(i);
-                btn.disabled = true; // 預設禁用，開始計時後啟用
+                btn.disabled = true; 
                 grid.appendChild(btn);
             }
         }
 
-        // 格式化時間 (MM:SS.ms)
         function formatTime(ms) {
             const date = new Date(ms);
             const m = date.getUTCMinutes().toString().padStart(2, '0');
@@ -181,44 +207,29 @@
             return `${m}:${s}.${msText}`;
         }
 
-        // 取得當前時間字串 (用於欄位標題)
         function getCurrentDateTimeStr() {
             const now = new Date();
-            return now.toLocaleString('zh-TW', { 
-                year: 'numeric', 
-                month: '2-digit', 
-                day: '2-digit', 
-                hour: '2-digit', 
-                minute: '2-digit', 
-                second: '2-digit',
-                hour12: false 
-            });
+            return now.toLocaleString('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
         }
 
-        // 切換計時器狀態 (開始/結束)
         function toggleTimer() {
             const btn = document.getElementById('mainControlBtn');
             const studentBtns = document.querySelectorAll('#studentGrid button');
             const startTimeDisplay = document.getElementById('startTimeDisplay');
 
             if (!isRunning) {
-                // === 開始計時 ===
                 isRunning = true;
                 startTime = Date.now() - elapsedTime;
-                
                 if (!runStartTimestamp) {
                     runStartTimestamp = getCurrentDateTimeStr();
                     startTimeDisplay.textContent = `起跑時間：${runStartTimestamp}`;
                 }
-                
                 timerInterval = setInterval(() => {
                     elapsedTime = Date.now() - startTime;
                     document.getElementById('timerDisplay').textContent = formatTime(elapsedTime);
                 }, 30);
-
                 btn.textContent = '計時結束';
                 btn.className = 'mb-10 px-10 py-4 text-2xl font-bold rounded-full text-white shadow-lg transform transition hover:-translate-y-1 hover:shadow-xl bg-red-500 hover:bg-red-600 focus:outline-none ring-4 ring-red-200';
-                
                 studentBtns.forEach(b => {
                     if (!studentResults[b.textContent]) {
                         b.disabled = false;
@@ -226,29 +237,21 @@
                         b.classList.add('text-blue-600', 'border-blue-400', 'hover:bg-blue-50', 'bg-white');
                     }
                 });
-
                 document.getElementById('resultSection').classList.add('hidden');
-
             } else {
-                // === 結束計時 ===
                 clearInterval(timerInterval);
                 isRunning = false;
-
                 btn.textContent = '計時開始';
                 btn.className = 'mb-10 px-10 py-4 text-2xl font-bold rounded-full text-white shadow-lg transform transition hover:-translate-y-1 hover:shadow-xl bg-green-500 hover:bg-green-600 focus:outline-none ring-4 ring-green-200';
-
                 studentBtns.forEach(b => b.disabled = true);
                 renderResultTable();
             }
         }
 
-        // 記錄特定座號的時間
         function recordTime(seatNum) {
             if (!isRunning) return;
-
             const currentTimeStr = formatTime(elapsedTime);
             studentResults[seatNum] = currentTimeStr;
-
             const btn = document.getElementById(`student-${seatNum}`);
             btn.disabled = true;
             btn.classList.remove('text-blue-600', 'border-blue-400', 'hover:bg-blue-50', 'bg-white');
@@ -256,133 +259,182 @@
             btn.innerHTML = `${seatNum}<br><span class="text-xs">${currentTimeStr.split('.')[0]}</span>`;
         }
 
-        // 渲染結果表格
         function renderResultTable() {
             const tableBody = document.getElementById('scoreTableBody');
             tableBody.innerHTML = '';
-
             for (let i = 1; i <= TOTAL_STUDENTS; i++) {
                 const time = studentResults[i] || '--:--.--';
                 const status = studentResults[i] ? '<span class="text-green-600 font-bold">已完成</span>' : '<span class="text-red-400">未完成</span>';
-                
-                const row = `
-                    <tr class="hover:bg-gray-50 transition">
-                        <td class="font-bold text-lg">${i}</td>
-                        <td class="font-mono text-lg font-medium">${time}</td>
-                        <td>${status}</td>
-                    </tr>
-                `;
+                const row = `<tr class="hover:bg-gray-50 transition"><td class="font-bold text-lg">${i}</td><td class="font-mono text-lg font-medium">${time}</td><td>${status}</td></tr>`;
                 tableBody.innerHTML += row;
             }
-
-            const resultSection = document.getElementById('resultSection');
-            resultSection.classList.remove('hidden');
-            
-            setTimeout(() => {
-                resultSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }, 100);
+            document.getElementById('resultSection').classList.remove('hidden');
+            setTimeout(() => document.getElementById('resultSection').scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
         }
 
-        // 重置所有資料
         function resetAll() {
             Swal.fire({
-                title: '確定重置?',
-                text: "所有的成績紀錄將會被清除！",
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#d33',
-                cancelButtonColor: '#3085d6',
-                confirmButtonText: '是的，清除重置',
-                cancelButtonText: '取消'
+                title: '確定重置?', text: "所有的成績紀錄將會被清除！", icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33', confirmButtonText: '是的，清除重置', cancelButtonText: '取消'
             }).then((result) => {
                 if (result.isConfirmed) {
                     clearInterval(timerInterval);
                     isRunning = false;
-                    startTime = 0;
-                    elapsedTime = 0;
-                    runStartTimestamp = "";
-                    studentResults = {};
-                    
+                    startTime = 0; elapsedTime = 0; runStartTimestamp = ""; studentResults = {};
                     document.getElementById('timerDisplay').textContent = "00:00.00";
                     document.getElementById('startTimeDisplay').textContent = "";
-                    
                     const mainBtn = document.getElementById('mainControlBtn');
                     mainBtn.textContent = '計時開始';
                     mainBtn.className = 'mb-10 px-10 py-4 text-2xl font-bold rounded-full text-white shadow-lg transform transition hover:-translate-y-1 hover:shadow-xl bg-green-500 hover:bg-green-600 focus:outline-none ring-4 ring-green-200';
-
                     document.getElementById('resultSection').classList.add('hidden');
-                    
                     generateStudents();
-                    
                     Swal.fire('已重置', '資料已清除', 'success');
                 }
             });
         }
 
-        // === Google Sheets 上傳功能 (硬寫入版) ===
         async function uploadToGoogleSheets() {
-            if (Object.keys(studentResults).length === 0) {
-                Swal.fire('沒有資料', '請先進行計時並記錄成績', 'info');
-                return;
-            }
-
-            // 檢查是否已設定網址
-            if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL.includes("EXAMPLE") || GOOGLE_SCRIPT_URL.length < 10) {
-                Swal.fire({
-                    title: '尚未設定網址',
-                    html: `請使用記事本打開這個 html 檔案，<br>搜尋 <b>GOOGLE_SCRIPT_URL</b>，<br>並將您的 Google Apps Script 網址填入。`,
-                    icon: 'error'
-                });
-                return;
-            }
-
-            // 準備傳送的資料
+            if (Object.keys(studentResults).length === 0) { Swal.fire('沒有資料', '請先進行計時', 'info'); return; }
+            if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL.includes("EXAMPLE") || GOOGLE_SCRIPT_URL.length < 10) { Swal.fire({title: '尚未設定網址', html: `請修改 html 中的 GOOGLE_SCRIPT_URL`, icon: 'error'}); return; }
+            
             const studentsData = [];
-            for (let i = 1; i <= TOTAL_STUDENTS; i++) {
-                if (studentResults[i]) {
-                    studentsData.push({
-                        seat: i,
-                        time: studentResults[i]
-                    });
-                }
-            }
-
-            const payload = {
-                header: runStartTimestamp || getCurrentDateTimeStr(), 
-                data: studentsData
-            };
-
-            Swal.fire({
-                title: '資料傳送中...',
-                html: '正在將資料送往 Google 試算表...<br>請勿關閉視窗。',
-                allowOutsideClick: false,
-                didOpen: () => {
-                    Swal.showLoading();
-                }
-            });
-
+            for (let i = 1; i <= TOTAL_STUDENTS; i++) { if (studentResults[i]) studentsData.push({ seat: i, time: studentResults[i] }); }
+            const payload = { header: runStartTimestamp || getCurrentDateTimeStr(), data: studentsData };
+            
+            Swal.fire({ title: '上傳中...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
             try {
                 const formData = new FormData();
                 formData.append('payload', JSON.stringify(payload));
+                await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: formData, mode: 'no-cors' });
+                Swal.fire('已發送', '資料已送出至 Google 試算表', 'success');
+            } catch (error) { Swal.fire('發送失敗', '請檢查網路或網址', 'error'); }
+        }
+
+        // ======================= 查詢功能邏輯 =======================
+
+        async function fetchAndFilterData() {
+            const weekInput = document.getElementById('queryWeekInput').value;
+            if (!weekInput) { Swal.fire('請選擇週次', '', 'warning'); return; }
+            if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL.includes("EXAMPLE") || GOOGLE_SCRIPT_URL.length < 10) { Swal.fire({title: '尚未設定網址', html: `請修改 html 中的 GOOGLE_SCRIPT_URL`, icon: 'error'}); return; }
+
+            // 計算該週的起始與結束日期 (週一到週日)
+            const [year, week] = weekInput.split('-W').map(Number);
+            const weekStart = getDateOfWeek(week, year);
+            const weekEnd = new Date(weekStart);
+            weekEnd.setDate(weekEnd.getDate() + 6);
+            weekEnd.setHours(23, 59, 59, 999);
+
+            const statusText = document.getElementById('queryStatusText');
+            statusText.textContent = `正在查詢 ${weekStart.toLocaleDateString()} ~ ${weekEnd.toLocaleDateString()} 的資料...`;
+            
+            Swal.fire({ title: '查詢中...', text: '正在從 Google 試算表讀取資料', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+            try {
+                // 使用 GET 請求獲取資料
+                const response = await fetch(GOOGLE_SCRIPT_URL);
+                const json = await response.json();
+
+                if (json.status !== 'success') { throw new Error(json.message || '讀取失敗'); }
                 
-                await fetch(GOOGLE_SCRIPT_URL, {
-                    method: 'POST',
-                    body: formData,
-                    mode: 'no-cors' 
+                const rawData = json.data; // 2D 陣列: [ ["座號", "2023...", ...], [1, "00:12", ...], ... ]
+                if (!rawData || rawData.length === 0) { throw new Error('表格是空的'); }
+
+                const headers = rawData[0]; // 第一列是標題 (時間)
+                const rows = rawData.slice(1); // 剩下的列是學生成績
+
+                // 找出符合該週的欄位索引 (Index)
+                // 假設第一欄 (Index 0) 是座號，從 Index 1 開始是時間標題
+                const matchedIndices = [];
+                for (let i = 1; i < headers.length; i++) {
+                    const colDate = new Date(headers[i]);
+                    if (!isNaN(colDate) && colDate >= weekStart && colDate <= weekEnd) {
+                        matchedIndices.push(i);
+                    }
+                }
+
+                if (matchedIndices.length === 0) {
+                    Swal.fire('查無資料', '該週次沒有跑步紀錄', 'info');
+                    statusText.textContent = `該週次 (${weekStart.toLocaleDateString()} ~ ${weekEnd.toLocaleDateString()}) 查無資料`;
+                    document.getElementById('queryResultContainer').classList.add('hidden');
+                    return;
+                }
+
+                // 建構表格
+                const tableHead = document.getElementById('queryTableHead');
+                const tableBody = document.getElementById('queryTableBody');
+                
+                // 1. 表頭: 座號 + 符合的日期
+                let headHtml = '<tr><th class="w-20">座號</th>';
+                matchedIndices.forEach(idx => {
+                    // 簡化標題顯示，只顯示日期與時間，去掉年份如果太長
+                    const d = new Date(headers[idx]);
+                    const displayStr = `${d.getMonth()+1}/${d.getDate()} ${d.getHours()}:${d.getMinutes().toString().padStart(2,'0')}`;
+                    headHtml += `<th>${displayStr}</th>`;
+                });
+                headHtml += '</tr>';
+                tableHead.innerHTML = headHtml;
+
+                // 2. 內容: 每個學生的成績
+                let bodyHtml = '';
+                // 為了讓座號排序 (Google Sheet 讀出來可能是亂的，或是空的)，我們固定產生 1~24 號
+                // 先把 rawData 轉成 map 方便查找: { "1": rowData, "2": rowData }
+                const studentMap = {};
+                rows.forEach(row => {
+                    if(row[0]) studentMap[row[0].toString()] = row;
                 });
 
-                Swal.fire({
-                    title: '已發送請求',
-                    html: `系統已發出儲存指令！<br><br>
-                           <span style="color: green; font-weight: bold;">請檢查您的 Google 試算表是否已更新。</span>`,
-                    icon: 'success'
-                });
+                for (let i = 1; i <= TOTAL_STUDENTS; i++) {
+                    const seatStr = i.toString();
+                    const rowData = studentMap[seatStr];
+                    
+                    let rowHtml = `<tr class="hover:bg-gray-50"><td class="font-bold">${i}</td>`;
+                    
+                    matchedIndices.forEach(idx => {
+                        let time = '--';
+                        if (rowData && rowData[idx]) {
+                            time = rowData[idx];
+                        }
+                        // 如果有成績，顯示綠色
+                        const colorClass = time !== '--' ? 'text-blue-600 font-mono font-bold' : 'text-gray-300';
+                        rowHtml += `<td class="${colorClass}">${time}</td>`;
+                    });
+                    rowHtml += '</tr>';
+                    bodyHtml += rowHtml;
+                }
+                tableBody.innerHTML = bodyHtml;
+
+                // 顯示結果
+                document.getElementById('queryResultContainer').classList.remove('hidden');
+                statusText.textContent = `查詢完成，共找到 ${matchedIndices.length} 筆紀錄`;
+                Swal.close();
 
             } catch (error) {
-                console.error('Error:', error);
-                Swal.fire('發送失敗', '請檢查您的網路連線，或確認網址是否正確。', 'error');
+                console.error(error);
+                Swal.fire('查詢失敗', '無法讀取資料，請確認 Google Apps Script 已更新且權限正確。\n' + error.message, 'error');
+                statusText.textContent = '查詢發生錯誤';
             }
         }
+
+        // 輔助函式：取得 ISO 週次的週一日期
+        function getDateOfWeek(w, y) {
+            const d = new Date(y, 0, 1 + (w - 1) * 7);
+            const dayOfWeek = d.getDay();
+            const ISOweekStart = d;
+            if (dayOfWeek <= 4)
+                ISOweekStart.setDate(d.getDate() - d.getDay() + 1);
+            else
+                ISOweekStart.setDate(d.getDate() + 8 - d.getDay());
+            return ISOweekStart;
+        }
+
+        function getWeekString(date) {
+            const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+            const dayNum = d.getUTCDay() || 7;
+            d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+            const yearStart = new Date(Date.UTC(d.getUTCFullYear(),0,1));
+            const weekNo = Math.ceil(( ( (d - yearStart) / 86400000) + 1)/7);
+            return `${d.getUTCFullYear()}-W${weekNo.toString().padStart(2, '0')}`;
+        }
+
     </script>
 </body>
 </html>
