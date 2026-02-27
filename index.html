@@ -15,10 +15,6 @@
         .result-table th, .result-table td { border: 1px solid #e2e8f0; padding: 8px; text-align: center; white-space: nowrap; }
         .result-table th { background-color: #3b82f6; color: white; position: sticky; top: 0; }
         .result-table tr:nth-child(even) { background-color: #f8fafc; }
-        
-        /* 頁籤樣式 */
-        .tab-btn { @apply px-6 py-2 font-bold text-gray-500 border-b-4 border-transparent hover:text-blue-600 transition; }
-        .tab-btn.active { @apply text-blue-600 border-blue-600; }
     </style>
 </head>
 <body class="min-h-screen flex flex-col relative pb-20">
@@ -30,12 +26,6 @@
             <div class="bg-blue-100 text-blue-800 px-4 py-2 rounded-lg font-bold text-sm">
                 班級人數：24 人 (固定)
             </div>
-        </div>
-        
-        <!-- 頁籤切換 -->
-        <div class="flex justify-center space-x-4 bg-gray-50 border-t border-gray-100">
-            <button onclick="switchTab('timer')" id="tab-timer" class="tab-btn active">⏱️ 計時模式</button>
-            <button onclick="switchTab('query')" id="tab-query" class="tab-btn">📊 查詢紀錄</button>
         </div>
     </div>
 
@@ -88,39 +78,6 @@
             </div>
         </div>
 
-        <!-- ======================= 查詢模式區塊 ======================= -->
-        <div id="querySection" class="w-full flex-col items-center hidden max-w-5xl">
-            <div class="bg-white p-6 rounded-xl shadow-lg w-full mb-6 border border-gray-200">
-                <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
-                    <label class="font-bold text-gray-700">選擇查詢週次：</label>
-                    <input type="week" id="queryWeekInput" class="border-2 border-blue-200 rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500">
-                    <button onclick="fetchAndFilterData()" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 font-bold shadow-md transition flex items-center gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                        </svg>
-                        查詢
-                    </button>
-                </div>
-                <p class="text-center text-gray-500 text-sm mt-3" id="queryStatusText">請選擇週次並點擊查詢</p>
-                <div class="text-center mt-2 text-xs text-gray-400">
-                    * 如果出現失敗，請檢查 Google Script 部署權限是否為「所有人」
-                </div>
-            </div>
-
-            <div id="queryResultContainer" class="w-full bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200 hidden">
-                <div class="overflow-x-auto max-h-[60vh]">
-                    <table class="w-full result-table" id="queryTable">
-                        <thead id="queryTableHead">
-                            <!-- 動態生成表頭 -->
-                        </thead>
-                        <tbody id="queryTableBody" class="text-gray-700">
-                            <!-- 動態生成內容 -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
     </div>
 
     <!-- 底部功能區 -->
@@ -141,7 +98,7 @@
         // ▼▼▼▼▼ 請將您的 Google Apps Script 網址貼在下方 ▼▼▼▼▼
         // =========================================================================
         
-        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx3g6QTe9WmylwUJFQKad6kssAL9_pTbu4U0Oic48XCanjX8B7SKGzHGP7OnLDnegX-Kw/exec"; 
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzNVOI_F8RsS_ChVKZw5t8J_Q8B00NqaNvnhVn3QmAl548U6ZB3_8R6XBVcgdbbCoUMyg/exec"; 
         
         // =========================================================================
 
@@ -155,32 +112,7 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             generateStudents();
-            const today = new Date();
-            const weekString = getWeekString(today);
-            document.getElementById('queryWeekInput').value = weekString;
         });
-
-        function switchTab(tabName) {
-            const timerSection = document.getElementById('timerSection');
-            const querySection = document.getElementById('querySection');
-            const resetBtn = document.getElementById('resetBtn');
-            const tabTimer = document.getElementById('tab-timer');
-            const tabQuery = document.getElementById('tab-query');
-
-            if (tabName === 'timer') {
-                timerSection.classList.remove('hidden');
-                querySection.classList.add('hidden');
-                resetBtn.classList.remove('hidden');
-                tabTimer.classList.add('active');
-                tabQuery.classList.remove('active');
-            } else {
-                timerSection.classList.add('hidden');
-                querySection.classList.remove('hidden');
-                resetBtn.classList.add('hidden');
-                tabTimer.classList.remove('active');
-                tabQuery.classList.add('active');
-            }
-        }
 
         // === 計時器邏輯 ===
         function generateStudents() {
@@ -308,134 +240,6 @@
                 await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: formData, mode: 'no-cors' });
                 Swal.fire('已發送', '資料已送出至 Google 試算表', 'success');
             } catch (error) { Swal.fire('發送失敗', '請檢查網路或網址', 'error'); }
-        }
-
-        // ======================= 查詢功能邏輯 =======================
-
-        async function fetchAndFilterData() {
-            const weekInput = document.getElementById('queryWeekInput').value;
-            if (!weekInput) { Swal.fire('請選擇週次', '', 'warning'); return; }
-            if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL.includes("EXAMPLE") || GOOGLE_SCRIPT_URL.length < 10) { Swal.fire({title: '尚未設定網址', html: `請修改 html 中的 GOOGLE_SCRIPT_URL`, icon: 'error'}); return; }
-
-            const [year, week] = weekInput.split('-W').map(Number);
-            const weekStart = getDateOfWeek(week, year);
-            const weekEnd = new Date(weekStart);
-            weekEnd.setDate(weekEnd.getDate() + 6);
-            weekEnd.setHours(23, 59, 59, 999);
-
-            const statusText = document.getElementById('queryStatusText');
-            statusText.textContent = `正在查詢 ${weekStart.toLocaleDateString()} ~ ${weekEnd.toLocaleDateString()} 的資料...`;
-            
-            Swal.fire({ title: '查詢中...', text: '正在從 Google 試算表讀取資料', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-
-            try {
-                // 使用 timestamp 參數避免快取
-                const fetchUrl = GOOGLE_SCRIPT_URL + (GOOGLE_SCRIPT_URL.includes('?') ? '&' : '?') + 't=' + new Date().getTime();
-                
-                const response = await fetch(fetchUrl);
-                
-                if (!response.ok) {
-                    throw new Error('網路回應不正常 (Status: ' + response.status + ')');
-                }
-
-                const json = await response.json();
-
-                if (json.status !== 'success') { throw new Error(json.message || '讀取失敗'); }
-                
-                const rawData = json.data; 
-                if (!rawData || rawData.length === 0) { throw new Error('表格是空的'); }
-
-                const headers = rawData[0]; 
-                const rows = rawData.slice(1); 
-
-                const matchedIndices = [];
-                for (let i = 1; i < headers.length; i++) {
-                    const colDate = new Date(headers[i]);
-                    // 寬鬆判斷：如果有日期且有效
-                    if (!isNaN(colDate.getTime())) {
-                        if (colDate >= weekStart && colDate <= weekEnd) {
-                            matchedIndices.push(i);
-                        }
-                    }
-                }
-
-                if (matchedIndices.length === 0) {
-                    Swal.fire('查無資料', '該週次沒有跑步紀錄', 'info');
-                    statusText.textContent = `該週次 (${weekStart.toLocaleDateString()} ~ ${weekEnd.toLocaleDateString()}) 查無資料`;
-                    document.getElementById('queryResultContainer').classList.add('hidden');
-                    return;
-                }
-
-                const tableHead = document.getElementById('queryTableHead');
-                const tableBody = document.getElementById('queryTableBody');
-                
-                let headHtml = '<tr><th class="w-20">座號</th>';
-                matchedIndices.forEach(idx => {
-                    const d = new Date(headers[idx]);
-                    const displayStr = `${d.getMonth()+1}/${d.getDate()} ${d.getHours()}:${d.getMinutes().toString().padStart(2,'0')}`;
-                    headHtml += `<th>${displayStr}</th>`;
-                });
-                headHtml += '</tr>';
-                tableHead.innerHTML = headHtml;
-
-                let bodyHtml = '';
-                const studentMap = {};
-                rows.forEach(row => {
-                    if(row[0]) studentMap[row[0].toString()] = row;
-                });
-
-                for (let i = 1; i <= TOTAL_STUDENTS; i++) {
-                    const seatStr = i.toString();
-                    const rowData = studentMap[seatStr];
-                    
-                    let rowHtml = `<tr class="hover:bg-gray-50"><td class="font-bold">${i}</td>`;
-                    
-                    matchedIndices.forEach(idx => {
-                        let time = '--';
-                        if (rowData && rowData[idx]) {
-                            time = rowData[idx];
-                        }
-                        const colorClass = time !== '--' ? 'text-blue-600 font-mono font-bold' : 'text-gray-300';
-                        rowHtml += `<td class="${colorClass}">${time}</td>`;
-                    });
-                    rowHtml += '</tr>';
-                    bodyHtml += rowHtml;
-                }
-                tableBody.innerHTML = bodyHtml;
-
-                document.getElementById('queryResultContainer').classList.remove('hidden');
-                statusText.textContent = `查詢完成，共找到 ${matchedIndices.length} 筆紀錄`;
-                Swal.close();
-
-            } catch (error) {
-                console.error(error);
-                let msg = '請確認 Google Apps Script 已更新且權限正確 (所有人/Anyone)。';
-                if (error.message.includes('Failed to fetch')) {
-                    msg += ' <br><b>(瀏覽器攔截了連線，通常是因為權限未設為公開)</b>';
-                }
-                Swal.fire('查詢失敗', msg + '<br><span class="text-xs text-red-500">' + error.message + '</span>', 'error');
-                statusText.textContent = '查詢發生錯誤';
-            }
-        }
-
-        function getDateOfWeek(w, y) {
-            const d = new Date(y, 0, 1 + (w - 1) * 7);
-            const dayOfWeek = d.getDay();
-            const ISOweekStart = d;
-            if (dayOfWeek <= 4)
-                ISOweekStart.setDate(d.getDate() - d.getDay() + 1);
-            else
-                ISOweekStart.setDate(d.getDate() + 8 - d.getDay());
-            return ISOweekStart;
-        }
-
-        function getWeekString(date) {
-            const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-            const dayNum = d.getUTCDay() || 7;
-            d.setUTCDate(d.getUTCDate() + 4 - dayNum);
-            const yearStart = new Date(Date.UTC(d.getUTCFullYear(),0,1));
-            const weekNo = Math.ceil(( ( (d - yearStart) / 86400000) + 1)/7);
-            return `${d.getUTCFullYear()}-W${weekNo.toString().padStart(2, '0')}`;
         }
     </script>
 </body>
