@@ -21,33 +21,33 @@
 
     <!-- 頂部導航與設定 -->
     <div class="bg-white shadow-md z-20">
-        <div class="p-4 flex flex-wrap items-center justify-between">
-            <h1 class="text-2xl font-bold text-blue-800 tracking-wider">長安小鐵人計時表</h1>
-            <div class="bg-blue-100 text-blue-800 px-4 py-2 rounded-lg font-bold text-sm">
+        <div class="p-4 flex flex-wrap items-center justify-between gap-2">
+            <h1 class="text-xl sm:text-2xl font-bold text-blue-800 tracking-wider">長安小鐵人計時表</h1>
+            <div class="bg-blue-100 text-blue-800 px-3 py-1 sm:px-4 sm:py-2 rounded-lg font-bold text-xs sm:text-sm">
                 班級人數：24 人 (固定)
             </div>
         </div>
     </div>
 
     <!-- 主要內容區 -->
-    <div class="flex-grow container mx-auto px-4 py-8 flex flex-col items-center w-full">
+    <div class="flex-grow container mx-auto px-2 sm:px-4 py-6 sm:py-8 flex flex-col items-center w-full">
 
         <!-- ======================= 計時模式區塊 ======================= -->
         <div id="timerSection" class="w-full flex flex-col items-center">
-            <div class="mb-6 text-center">
-                <div id="timerDisplay" class="text-7xl sm:text-8xl font-mono font-bold text-gray-800 tracking-widest tabular-nums drop-shadow-sm">
+            <div class="mb-4 sm:mb-6 text-center">
+                <div id="timerDisplay" class="text-6xl sm:text-7xl md:text-8xl font-mono font-bold text-gray-800 tracking-widest tabular-nums drop-shadow-sm">
                     00:00
                 </div>
-                <div class="text-gray-400 text-sm mt-1">分 : 秒 . 毫秒</div>
-                <div id="startTimeDisplay" class="text-blue-500 font-medium mt-2 h-6 text-sm"></div>
+                <div class="text-gray-400 text-xs sm:text-sm mt-1">分 : 秒 . 毫秒</div>
+                <div id="startTimeDisplay" class="text-blue-500 font-medium mt-1 sm:mt-2 h-6 text-xs sm:text-sm"></div>
             </div>
 
             <button id="mainControlBtn" onclick="toggleTimer()" 
-                    class="mb-10 px-10 py-4 text-2xl font-bold rounded-full text-white shadow-lg transform transition hover:-translate-y-1 hover:shadow-xl bg-green-500 hover:bg-green-600 focus:outline-none ring-4 ring-green-200">
+                    class="mb-6 sm:mb-10 px-8 py-3 sm:px-10 sm:py-4 text-xl sm:text-2xl font-bold rounded-full text-white shadow-lg transform transition hover:-translate-y-1 hover:shadow-xl bg-green-500 hover:bg-green-600 focus:outline-none ring-4 ring-green-200 w-11/12 max-w-xs sm:max-w-none">
                 計時開始
             </button>
 
-            <div id="studentGrid" class="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-4 w-full max-w-5xl mb-8">
+            <div id="studentGrid" class="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-2 sm:gap-4 w-full max-w-5xl mb-6 sm:mb-8 px-2 sm:px-0">
                 <!-- 按鈕由 JS 生成 -->
             </div>
 
@@ -66,9 +66,9 @@
                         <table class="w-full result-table" id="scoreTable">
                             <thead>
                                 <tr>
-                                    <th class="w-1/3">座號</th>
-                                    <th class="w-1/3">成績</th>
-                                    <th class="w-1/3">狀態</th>
+                                    <th class="w-1/3 text-sm sm:text-base">座號</th>
+                                    <th class="w-1/3 text-sm sm:text-base">成績</th>
+                                    <th class="w-1/3 text-sm sm:text-base">狀態</th>
                                 </tr>
                             </thead>
                             <tbody id="scoreTableBody" class="text-gray-700"></tbody>
@@ -81,14 +81,14 @@
     </div>
 
     <!-- 底部功能區 -->
-    <div class="fixed bottom-0 left-0 w-full p-4 pointer-events-none flex justify-between items-end z-20">
-        <button id="resetBtn" onclick="resetAll()" class="pointer-events-auto bg-red-500 text-white px-6 py-2 rounded-full shadow-lg hover:bg-red-600 font-bold transition flex items-center gap-2">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <div class="fixed bottom-0 left-0 w-full p-3 sm:p-4 pointer-events-none flex justify-between items-end z-20">
+        <button id="resetBtn" onclick="resetAll()" class="pointer-events-auto bg-red-500 text-white px-4 py-2 sm:px-6 sm:py-2 rounded-full shadow-lg hover:bg-red-600 font-bold transition flex items-center gap-1 sm:gap-2 text-sm sm:text-base">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 sm:h-5 sm:w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
             </svg>
             重置
         </button>
-        <div class="bg-white/80 backdrop-blur px-4 py-2 rounded-lg shadow-sm border border-gray-100 text-gray-500 font-serif italic pointer-events-auto ml-auto">
+        <div class="bg-white/80 backdrop-blur px-3 py-1 sm:px-4 sm:py-2 rounded-lg shadow-sm border border-gray-100 text-gray-500 font-serif italic pointer-events-auto ml-auto text-xs sm:text-sm">
             文君製作
         </div>
     </div>
@@ -124,7 +124,7 @@
             for (let i = 1; i <= TOTAL_STUDENTS; i++) {
                 const btn = document.createElement('button');
                 btn.id = `student-${i}`;
-                btn.className = 'btn-circle-student w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-white border-4 border-gray-200 text-xl font-bold text-gray-400 flex items-center justify-center focus:outline-none';
+                btn.className = 'btn-circle-student w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-full bg-white border-2 sm:border-4 border-gray-200 text-lg sm:text-xl font-bold text-gray-400 flex flex-col items-center justify-center focus:outline-none p-0 leading-tight';
                 btn.textContent = i;
                 btn.onclick = () => recordTime(i);
                 btn.disabled = true; 
@@ -162,7 +162,7 @@
                     document.getElementById('timerDisplay').textContent = formatTime(elapsedTime);
                 }, 30);
                 btn.textContent = '計時結束';
-                btn.className = 'mb-10 px-10 py-4 text-2xl font-bold rounded-full text-white shadow-lg transform transition hover:-translate-y-1 hover:shadow-xl bg-red-500 hover:bg-red-600 focus:outline-none ring-4 ring-red-200';
+                btn.className = 'mb-6 sm:mb-10 px-8 py-3 sm:px-10 sm:py-4 text-xl sm:text-2xl font-bold rounded-full text-white shadow-lg transform transition hover:-translate-y-1 hover:shadow-xl bg-red-500 hover:bg-red-600 focus:outline-none ring-4 ring-red-200 w-11/12 max-w-xs sm:max-w-none';
                 studentBtns.forEach(b => {
                     if (!studentResults[b.textContent]) {
                         b.disabled = false;
@@ -175,7 +175,7 @@
                 clearInterval(timerInterval);
                 isRunning = false;
                 btn.textContent = '計時開始';
-                btn.className = 'mb-10 px-10 py-4 text-2xl font-bold rounded-full text-white shadow-lg transform transition hover:-translate-y-1 hover:shadow-xl bg-green-500 hover:bg-green-600 focus:outline-none ring-4 ring-green-200';
+                btn.className = 'mb-6 sm:mb-10 px-8 py-3 sm:px-10 sm:py-4 text-xl sm:text-2xl font-bold rounded-full text-white shadow-lg transform transition hover:-translate-y-1 hover:shadow-xl bg-green-500 hover:bg-green-600 focus:outline-none ring-4 ring-green-200 w-11/12 max-w-xs sm:max-w-none';
                 studentBtns.forEach(b => b.disabled = true);
                 renderResultTable();
             }
@@ -188,8 +188,8 @@
             const btn = document.getElementById(`student-${seatNum}`);
             btn.disabled = true;
             btn.classList.remove('text-blue-600', 'border-blue-400', 'hover:bg-blue-50', 'bg-white');
-            btn.classList.add('bg-green-500', 'text-white', 'border-green-600', 'scale-95');
-            btn.innerHTML = `${seatNum}<br><span class="text-xs">${currentTimeStr.split('.')[0]}</span>`;
+            btn.classList.add('bg-green-500', 'text-white', 'border-green-500', 'sm:border-green-600', 'scale-95');
+            btn.innerHTML = `<span>${seatNum}</span><span class="text-[10px] sm:text-xs font-normal mt-0.5">${currentTimeStr.split('.')[0]}</span>`;
         }
 
         function renderResultTable() {
@@ -198,7 +198,7 @@
             for (let i = 1; i <= TOTAL_STUDENTS; i++) {
                 const time = studentResults[i] || '--:--.--';
                 const status = studentResults[i] ? '<span class="text-green-600 font-bold">已完成</span>' : '<span class="text-red-400">未完成</span>';
-                const row = `<tr class="hover:bg-gray-50 transition"><td class="font-bold text-lg">${i}</td><td class="font-mono text-lg font-medium">${time}</td><td>${status}</td></tr>`;
+                const row = `<tr class="hover:bg-gray-50 transition"><td class="font-bold text-sm sm:text-lg">${i}</td><td class="font-mono text-sm sm:text-lg font-medium">${time}</td><td class="text-sm sm:text-base">${status}</td></tr>`;
                 tableBody.innerHTML += row;
             }
             document.getElementById('resultSection').classList.remove('hidden');
@@ -217,7 +217,7 @@
                     document.getElementById('startTimeDisplay').textContent = "";
                     const mainBtn = document.getElementById('mainControlBtn');
                     mainBtn.textContent = '計時開始';
-                    mainBtn.className = 'mb-10 px-10 py-4 text-2xl font-bold rounded-full text-white shadow-lg transform transition hover:-translate-y-1 hover:shadow-xl bg-green-500 hover:bg-green-600 focus:outline-none ring-4 ring-green-200';
+                    mainBtn.className = 'mb-6 sm:mb-10 px-8 py-3 sm:px-10 sm:py-4 text-xl sm:text-2xl font-bold rounded-full text-white shadow-lg transform transition hover:-translate-y-1 hover:shadow-xl bg-green-500 hover:bg-green-600 focus:outline-none ring-4 ring-green-200 w-11/12 max-w-xs sm:max-w-none';
                     document.getElementById('resultSection').classList.add('hidden');
                     generateStudents();
                     Swal.fire('已重置', '資料已清除', 'success');
