@@ -3,28 +3,73 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>長安小鐵人計時表</title>
+    <title>熱血決戰計時表</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     
     <style>
-        body { font-family: 'Noto Sans TC', sans-serif; background-color: #f0f9ff; }
-        .btn-circle-student { transition: all 0.2s; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
-        .btn-circle-student:active { transform: scale(0.95); }
-        .result-table th, .result-table td { border: 1px solid #e2e8f0; padding: 8px; text-align: center; white-space: nowrap; }
-        .result-table th { background-color: #3b82f6; color: white; position: sticky; top: 0; }
-        .result-table tr:nth-child(even) { background-color: #f8fafc; }
+        body { 
+            font-family: 'Noto Sans TC', sans-serif; 
+            background: linear-gradient(135deg, #fff5f5 0%, #ffedd5 50%, #fee2e2 100%);
+        }
+        .btn-circle-student { 
+            transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1); 
+            box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.2); 
+        }
+        .btn-circle-student:active { 
+            transform: scale(0.9); 
+        }
+        .result-table th, .result-table td { 
+            border: 1px solid #fca5a5; 
+            padding: 8px; 
+            text-align: center; 
+            white-space: nowrap; 
+        }
+        .result-table th { 
+            background: linear-gradient(to right, #ef4444, #f97316); 
+            color: white; 
+            position: sticky; 
+            top: 0; 
+            font-weight: 900;
+        }
+        .result-table tr:nth-child(even) { 
+            background-color: #fffaf5; 
+        }
+        .timer-text {
+            text-shadow: 2px 4px 0px rgba(239, 68, 68, 0.2);
+        }
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { 
+            -webkit-appearance: none; 
+            margin: 0; 
+        }
     </style>
 </head>
 <body class="min-h-screen flex flex-col relative pb-20">
 
-    <!-- 頂部導航與設定 -->
-    <div class="bg-white shadow-md z-20">
+    <!-- 頂部導航 -->
+    <div class="bg-white/90 backdrop-blur shadow-md border-b-4 border-red-500 z-20">
         <div class="p-4 flex flex-wrap items-center justify-between gap-2">
-            <h1 class="text-xl sm:text-2xl font-bold text-blue-800 tracking-wider">長安小鐵人計時表</h1>
-            <div class="bg-blue-100 text-blue-800 px-3 py-1 sm:px-4 sm:py-2 rounded-lg font-bold text-xs sm:text-sm">
-                班級人數：24 人 (固定)
+            
+            <!-- 可點擊修改的標題 -->
+            <div class="flex items-center gap-2 cursor-pointer hover:opacity-75 transition group" onclick="editTitle()" title="點擊修改賽事名稱">
+                <h1 class="text-xl sm:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-red-600 to-orange-500 tracking-wider italic flex items-center gap-2">
+                    🏃‍♂️ <span id="mainTitleText">長安小鐵人</span> 決戰計時 🔥
+                </h1>
+                <!-- 編輯小圖示 -->
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-red-400 opacity-50 group-hover:opacity-100 transition" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                </svg>
+            </div>
+            
+            <!-- 可修改且會記憶的人數輸入框 -->
+            <div class="flex items-center gap-1 sm:gap-2 bg-red-100 text-red-800 px-2 py-1 sm:px-3 sm:py-2 rounded-lg font-bold text-xs sm:text-sm shadow-inner border border-red-200">
+                <label for="studentCountInput" class="whitespace-nowrap">參賽人數：</label>
+                <input type="number" id="studentCountInput" min="1" max="100" 
+                       class="w-10 sm:w-14 bg-white border border-red-300 rounded px-1 text-center text-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 font-black shadow-sm" 
+                       onchange="updateStudentCount()">
+                <span class="whitespace-nowrap">人</span>
             </div>
         </div>
     </div>
@@ -32,77 +77,79 @@
     <!-- 主要內容區 -->
     <div class="flex-grow container mx-auto px-2 sm:px-4 py-6 sm:py-8 flex flex-col items-center w-full">
 
-        <!-- ======================= 計時模式區塊 ======================= -->
         <div id="timerSection" class="w-full flex flex-col items-center">
             <div class="mb-4 sm:mb-6 text-center">
-                <div id="timerDisplay" class="text-6xl sm:text-7xl md:text-8xl font-mono font-bold text-gray-800 tracking-widest tabular-nums drop-shadow-sm">
+                <div id="timerDisplay" class="timer-text text-6xl sm:text-7xl md:text-8xl font-mono font-black italic text-red-600 tracking-widest tabular-nums">
                     00:00
                 </div>
-                <div class="text-gray-400 text-xs sm:text-sm mt-1">分 : 秒 . 毫秒</div>
-                <div id="startTimeDisplay" class="text-blue-500 font-medium mt-1 sm:mt-2 h-6 text-xs sm:text-sm"></div>
+                <div class="text-orange-500/80 font-bold text-xs sm:text-sm mt-1 uppercase tracking-widest">MIN : SEC . MS</div>
+                <div id="startTimeDisplay" class="text-red-500 font-bold mt-1 sm:mt-2 h-6 text-xs sm:text-sm"></div>
             </div>
 
+            <!-- 主控制鈕 -->
             <button id="mainControlBtn" onclick="toggleTimer()" 
-                    class="mb-6 sm:mb-10 px-8 py-3 sm:px-10 sm:py-4 text-xl sm:text-2xl font-bold rounded-full text-white shadow-lg transform transition hover:-translate-y-1 hover:shadow-xl bg-green-500 hover:bg-green-600 focus:outline-none ring-4 ring-green-200 w-11/12 max-w-xs sm:max-w-none">
-                計時開始
+                    class="mb-6 sm:mb-10 px-8 py-3 sm:px-12 sm:py-5 text-xl sm:text-3xl font-black italic rounded-full text-white shadow-xl transform transition hover:-translate-y-1 hover:shadow-2xl bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 focus:outline-none ring-4 ring-red-200 w-11/12 max-w-xs sm:max-w-none border-2 border-white">
+                ⚡ 鳴槍起跑
             </button>
 
+            <!-- 學生按鈕網格 -->
             <div id="studentGrid" class="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-2 sm:gap-4 w-full max-w-5xl mb-6 sm:mb-8 px-2 sm:px-0">
                 <!-- 按鈕由 JS 生成 -->
             </div>
 
+            <!-- 成績表格 -->
             <div id="resultSection" class="w-full max-w-3xl hidden animate-fade-in-up">
-                <div class="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
-                    <div class="p-4 bg-blue-50 border-b border-blue-100 flex justify-between items-center">
-                        <h3 class="text-lg font-bold text-blue-800">⏱️ 本次成績</h3>
-                        <button onclick="uploadToGoogleSheets()" class="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 text-sm font-bold shadow-sm transition">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <div class="bg-white rounded-xl shadow-2xl overflow-hidden border-2 border-orange-100">
+                    <div class="p-4 bg-orange-50 border-b border-orange-200 flex justify-between items-center">
+                        <h3 class="text-lg font-black text-red-700 italic">🏆 完賽成績榜</h3>
+                        <button onclick="uploadToGoogleSheets()" class="flex items-center gap-2 bg-gradient-to-r from-gray-800 to-gray-900 text-white px-5 py-2 rounded-lg hover:from-black hover:to-black text-sm font-bold shadow-md transition transform hover:scale-105">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-orange-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
                             </svg>
-                            上傳資料
+                            上傳雲端
                         </button>
                     </div>
                     <div class="overflow-x-auto p-4">
                         <table class="w-full result-table" id="scoreTable">
                             <thead>
                                 <tr>
-                                    <th class="w-1/3 text-sm sm:text-base">座號</th>
-                                    <th class="w-1/3 text-sm sm:text-base">成績</th>
+                                    <th class="w-1/3 text-sm sm:text-base">選手座號</th>
+                                    <th class="w-1/3 text-sm sm:text-base">衝線成績</th>
                                     <th class="w-1/3 text-sm sm:text-base">狀態</th>
                                 </tr>
                             </thead>
-                            <tbody id="scoreTableBody" class="text-gray-700"></tbody>
+                            <tbody id="scoreTableBody" class="text-gray-800 font-medium"></tbody>
                         </table>
                     </div>
                 </div>
             </div>
         </div>
-
     </div>
 
     <!-- 底部功能區 -->
     <div class="fixed bottom-0 left-0 w-full p-3 sm:p-4 pointer-events-none flex justify-between items-end z-20">
-        <button id="resetBtn" onclick="resetAll()" class="pointer-events-auto bg-red-500 text-white px-4 py-2 sm:px-6 sm:py-2 rounded-full shadow-lg hover:bg-red-600 font-bold transition flex items-center gap-1 sm:gap-2 text-sm sm:text-base">
+        <button id="resetBtn" onclick="resetAll()" class="pointer-events-auto bg-white text-red-500 border-2 border-red-200 px-4 py-2 sm:px-6 sm:py-2 rounded-full shadow-lg hover:bg-red-50 hover:text-red-600 font-bold transition flex items-center gap-1 sm:gap-2 text-sm sm:text-base">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 sm:h-5 sm:w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
             </svg>
-            重置
+            重新賽事
         </button>
-        <div class="bg-white/80 backdrop-blur px-3 py-1 sm:px-4 sm:py-2 rounded-lg shadow-sm border border-gray-100 text-gray-500 font-serif italic pointer-events-auto ml-auto text-xs sm:text-sm">
+        <div class="bg-white/90 backdrop-blur px-3 py-1 sm:px-4 sm:py-2 rounded-lg shadow-sm border border-orange-200 text-orange-600 font-black italic pointer-events-auto ml-auto text-xs sm:text-sm">
             文君製作
         </div>
     </div>
 
     <script>
         // =========================================================================
-        // ▼▼▼▼▼ 請將您的 Google Apps Script 網址貼在下方 ▼▼▼▼▼
+        // ▼▼▼ 請將您的 Google Apps Script 網址貼在下方 ▼▼▼
         // =========================================================================
-        
-        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzNVOI_F8RsS_ChVKZw5t8J_Q8B00NqaNvnhVn3QmAl548U6ZB3_8R6XBVcgdbbCoUMyg/exec"; 
-        
+      const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzNVOI_F8RsS_ChVKZw5t8J_Q8B00NqaNvnhVn3QmAl548U6ZB3_8R6XBVcgdbbCoUMyg/exec";
         // =========================================================================
 
-        const TOTAL_STUDENTS = 24;
+        // 從 LocalStorage 讀取紀錄，若無則使用預設值
+        let totalStudents = parseInt(localStorage.getItem('savedStudentCount')) || 24;
+        let appTitle = localStorage.getItem('savedAppTitle') || "長安小鐵人";
+        
         let timerInterval;
         let startTime = 0;
         let runStartTimestamp = ""; 
@@ -111,20 +158,118 @@
         let studentResults = {}; 
 
         document.addEventListener('DOMContentLoaded', () => {
+            // 初始化標題與人數
+            document.getElementById('mainTitleText').textContent = appTitle;
+            document.title = `${appTitle} 決戰計時表`;
+            document.getElementById('studentCountInput').value = totalStudents;
             generateStudents();
         });
 
-        // === 計時器邏輯 ===
+        // ==================== 修改標題邏輯 ====================
+        async function editTitle() {
+            const { value: newTitle } = await Swal.fire({
+                title: '✏️ 修改賽事名稱',
+                input: 'text',
+                inputValue: appTitle,
+                inputPlaceholder: '請輸入新的名稱 (例如：五年三班)',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                cancelButtonColor: '#9ca3af',
+                confirmButtonText: '儲存',
+                cancelButtonText: '取消',
+                inputValidator: (value) => {
+                    if (!value.trim()) {
+                        return '名稱不能為空白！'
+                    }
+                }
+            });
+
+            if (newTitle) {
+                appTitle = newTitle.trim();
+                localStorage.setItem('savedAppTitle', appTitle); // 存入瀏覽器
+                document.getElementById('mainTitleText').textContent = appTitle;
+                document.title = `${appTitle} 決戰計時表`;
+                
+                const Toast = Swal.mixin({
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: 2000,
+                    timerProgressBar: true,
+                });
+                Toast.fire({ icon: 'success', title: '賽事名稱已更新' });
+            }
+        }
+
+        // ==================== 修改人數邏輯 ====================
+        function updateStudentCount() {
+            if (isRunning) {
+                Swal.fire('賽事進行中', '請先「停止計時」才能更改人數！', 'warning');
+                document.getElementById('studentCountInput').value = totalStudents;
+                return;
+            }
+            
+            if (Object.keys(studentResults).length > 0) {
+                Swal.fire({
+                    title: '⚠️ 將清空當前成績',
+                    text: '更改人數會重置目前的版面與成績，您確定要繼續嗎？',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#ef4444',
+                    cancelButtonColor: '#9ca3af',
+                    confirmButtonText: '確定更改',
+                    cancelButtonText: '取消'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        applyStudentCountChange();
+                    } else {
+                        document.getElementById('studentCountInput').value = totalStudents;
+                    }
+                });
+            } else {
+                applyStudentCountChange();
+            }
+        }
+
+        function applyStudentCountChange() {
+            let newVal = parseInt(document.getElementById('studentCountInput').value);
+            if (isNaN(newVal) || newVal < 1) newVal = 1;
+            if (newVal > 100) newVal = 100; 
+            
+            document.getElementById('studentCountInput').value = newVal;
+            totalStudents = newVal;
+            
+            // 存入瀏覽器 Memory
+            localStorage.setItem('savedStudentCount', totalStudents);
+            
+            // 重置狀態
+            startTime = 0; 
+            elapsedTime = 0; 
+            runStartTimestamp = ""; 
+            studentResults = {};
+            document.getElementById('timerDisplay').textContent = "00:00.00";
+            document.getElementById('startTimeDisplay').textContent = "";
+            document.getElementById('resultSection').classList.add('hidden');
+            
+            generateStudents();
+            
+            const Toast = Swal.mixin({
+                toast: true, position: 'top-end', showConfirmButton: false, timer: 1500
+            });
+            Toast.fire({ icon: 'success', title: `人數已更新為 ${totalStudents} 人` });
+        }
+
         function generateStudents() {
             const grid = document.getElementById('studentGrid');
             const tableBody = document.getElementById('scoreTableBody');
             grid.innerHTML = '';
             tableBody.innerHTML = '';
             studentResults = {};
-            for (let i = 1; i <= TOTAL_STUDENTS; i++) {
+            
+            for (let i = 1; i <= totalStudents; i++) {
                 const btn = document.createElement('button');
                 btn.id = `student-${i}`;
-                btn.className = 'btn-circle-student w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-full bg-white border-2 sm:border-4 border-gray-200 text-lg sm:text-xl font-bold text-gray-400 flex flex-col items-center justify-center focus:outline-none p-0 leading-tight';
+                btn.className = 'btn-circle-student w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-full bg-white border-2 sm:border-4 border-orange-200 text-lg sm:text-2xl font-black italic text-orange-300 flex flex-col items-center justify-center focus:outline-none p-0 leading-tight';
                 btn.textContent = i;
                 btn.onclick = () => recordTime(i);
                 btn.disabled = true; 
@@ -155,27 +300,29 @@
                 startTime = Date.now() - elapsedTime;
                 if (!runStartTimestamp) {
                     runStartTimestamp = getCurrentDateTimeStr();
-                    startTimeDisplay.textContent = `起跑時間：${runStartTimestamp}`;
+                    startTimeDisplay.innerHTML = `🚩 起跑時間：${runStartTimestamp}`;
                 }
                 timerInterval = setInterval(() => {
                     elapsedTime = Date.now() - startTime;
                     document.getElementById('timerDisplay').textContent = formatTime(elapsedTime);
                 }, 30);
-                btn.textContent = '計時結束';
-                btn.className = 'mb-6 sm:mb-10 px-8 py-3 sm:px-10 sm:py-4 text-xl sm:text-2xl font-bold rounded-full text-white shadow-lg transform transition hover:-translate-y-1 hover:shadow-xl bg-red-500 hover:bg-red-600 focus:outline-none ring-4 ring-red-200 w-11/12 max-w-xs sm:max-w-none';
+                
+                btn.innerHTML = '🛑 停止計時';
+                btn.className = 'mb-6 sm:mb-10 px-8 py-3 sm:px-12 sm:py-5 text-xl sm:text-3xl font-black italic rounded-full text-white shadow-xl transform transition hover:-translate-y-1 hover:shadow-2xl bg-gradient-to-r from-gray-800 to-black hover:from-gray-900 hover:to-black focus:outline-none ring-4 ring-gray-300 w-11/12 max-w-xs sm:max-w-none border-2 border-white';
+                
                 studentBtns.forEach(b => {
                     if (!studentResults[b.textContent]) {
                         b.disabled = false;
-                        b.classList.remove('text-gray-400', 'border-gray-200');
-                        b.classList.add('text-blue-600', 'border-blue-400', 'hover:bg-blue-50', 'bg-white');
+                        b.classList.remove('text-orange-300', 'border-orange-200');
+                        b.classList.add('text-red-600', 'border-red-500', 'hover:bg-red-50', 'bg-white', 'shadow-md');
                     }
                 });
                 document.getElementById('resultSection').classList.add('hidden');
             } else {
                 clearInterval(timerInterval);
                 isRunning = false;
-                btn.textContent = '計時開始';
-                btn.className = 'mb-6 sm:mb-10 px-8 py-3 sm:px-10 sm:py-4 text-xl sm:text-2xl font-bold rounded-full text-white shadow-lg transform transition hover:-translate-y-1 hover:shadow-xl bg-green-500 hover:bg-green-600 focus:outline-none ring-4 ring-green-200 w-11/12 max-w-xs sm:max-w-none';
+                btn.innerHTML = '⚡ 鳴槍起跑';
+                btn.className = 'mb-6 sm:mb-10 px-8 py-3 sm:px-12 sm:py-5 text-xl sm:text-3xl font-black italic rounded-full text-white shadow-xl transform transition hover:-translate-y-1 hover:shadow-2xl bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 focus:outline-none ring-4 ring-red-200 w-11/12 max-w-xs sm:max-w-none border-2 border-white';
                 studentBtns.forEach(b => b.disabled = true);
                 renderResultTable();
             }
@@ -187,18 +334,18 @@
             studentResults[seatNum] = currentTimeStr;
             const btn = document.getElementById(`student-${seatNum}`);
             btn.disabled = true;
-            btn.classList.remove('text-blue-600', 'border-blue-400', 'hover:bg-blue-50', 'bg-white');
-            btn.classList.add('bg-green-500', 'text-white', 'border-green-500', 'sm:border-green-600', 'scale-95');
-            btn.innerHTML = `<span>${seatNum}</span><span class="text-[10px] sm:text-xs font-normal mt-0.5">${currentTimeStr.split('.')[0]}</span>`;
+            btn.classList.remove('text-red-600', 'border-red-500', 'hover:bg-red-50', 'bg-white', 'shadow-md');
+            btn.classList.add('bg-gradient-to-br', 'from-red-500', 'to-orange-500', 'text-white', 'border-red-600', 'scale-95', 'shadow-inner');
+            btn.innerHTML = `<span>${seatNum}</span><span class="text-[10px] sm:text-xs font-bold mt-0.5 tracking-wider">${currentTimeStr.split('.')[0]}</span>`;
         }
 
         function renderResultTable() {
             const tableBody = document.getElementById('scoreTableBody');
             tableBody.innerHTML = '';
-            for (let i = 1; i <= TOTAL_STUDENTS; i++) {
+            for (let i = 1; i <= totalStudents; i++) {
                 const time = studentResults[i] || '--:--.--';
-                const status = studentResults[i] ? '<span class="text-green-600 font-bold">已完成</span>' : '<span class="text-red-400">未完成</span>';
-                const row = `<tr class="hover:bg-gray-50 transition"><td class="font-bold text-sm sm:text-lg">${i}</td><td class="font-mono text-sm sm:text-lg font-medium">${time}</td><td class="text-sm sm:text-base">${status}</td></tr>`;
+                const status = studentResults[i] ? '<span class="text-red-600 font-black">🔥 完賽</span>' : '<span class="text-gray-400">未完賽</span>';
+                const row = `<tr class="hover:bg-orange-50 transition"><td class="font-black text-sm sm:text-lg">${i}</td><td class="font-mono text-sm sm:text-lg font-bold">${time}</td><td class="text-sm sm:text-base">${status}</td></tr>`;
                 tableBody.innerHTML += row;
             }
             document.getElementById('resultSection').classList.remove('hidden');
@@ -207,7 +354,14 @@
 
         function resetAll() {
             Swal.fire({
-                title: '確定重置?', text: "所有的成績紀錄將會被清除！", icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33', confirmButtonText: '是的，清除重置', cancelButtonText: '取消'
+                title: '🔥 重新賽事?', 
+                text: "成績將全面清空，準備下一局！", 
+                icon: 'warning', 
+                showCancelButton: true, 
+                confirmButtonColor: '#ef4444', 
+                cancelButtonColor: '#9ca3af',
+                confirmButtonText: '是的，重新來過', 
+                cancelButtonText: '取消'
             }).then((result) => {
                 if (result.isConfirmed) {
                     clearInterval(timerInterval);
@@ -216,30 +370,30 @@
                     document.getElementById('timerDisplay').textContent = "00:00.00";
                     document.getElementById('startTimeDisplay').textContent = "";
                     const mainBtn = document.getElementById('mainControlBtn');
-                    mainBtn.textContent = '計時開始';
-                    mainBtn.className = 'mb-6 sm:mb-10 px-8 py-3 sm:px-10 sm:py-4 text-xl sm:text-2xl font-bold rounded-full text-white shadow-lg transform transition hover:-translate-y-1 hover:shadow-xl bg-green-500 hover:bg-green-600 focus:outline-none ring-4 ring-green-200 w-11/12 max-w-xs sm:max-w-none';
+                    mainBtn.innerHTML = '⚡ 鳴槍起跑';
+                    mainBtn.className = 'mb-6 sm:mb-10 px-8 py-3 sm:px-12 sm:py-5 text-xl sm:text-3xl font-black italic rounded-full text-white shadow-xl transform transition hover:-translate-y-1 hover:shadow-2xl bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 focus:outline-none ring-4 ring-red-200 w-11/12 max-w-xs sm:max-w-none border-2 border-white';
                     document.getElementById('resultSection').classList.add('hidden');
                     generateStudents();
-                    Swal.fire('已重置', '資料已清除', 'success');
+                    Swal.fire('已重置', '賽道已清空，隨時可以起跑！', 'success');
                 }
             });
         }
 
         async function uploadToGoogleSheets() {
-            if (Object.keys(studentResults).length === 0) { Swal.fire('沒有資料', '請先進行計時', 'info'); return; }
-            if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL.includes("EXAMPLE") || GOOGLE_SCRIPT_URL.length < 10) { Swal.fire({title: '尚未設定網址', html: `請修改 html 中的 GOOGLE_SCRIPT_URL`, icon: 'error'}); return; }
+            if (Object.keys(studentResults).length === 0) { Swal.fire('沒有紀錄', '請先鳴槍起跑並記錄成績', 'info'); return; }
+            if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL.includes("EXAMPLE") || GOOGLE_SCRIPT_URL.length < 10) { Swal.fire({title: '尚未綁定雲端', html: `請修改 html 原始碼中的 <b>GOOGLE_SCRIPT_URL</b>`, icon: 'error'}); return; }
             
             const studentsData = [];
-            for (let i = 1; i <= TOTAL_STUDENTS; i++) { if (studentResults[i]) studentsData.push({ seat: i, time: studentResults[i] }); }
+            for (let i = 1; i <= totalStudents; i++) { if (studentResults[i]) studentsData.push({ seat: i, time: studentResults[i] }); }
             const payload = { header: runStartTimestamp || getCurrentDateTimeStr(), data: studentsData };
             
-            Swal.fire({ title: '上傳中...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            Swal.fire({ title: '上傳戰績中...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
             try {
                 const formData = new FormData();
                 formData.append('payload', JSON.stringify(payload));
                 await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: formData, mode: 'no-cors' });
-                Swal.fire('已發送', '資料已送出至 Google 試算表', 'success');
-            } catch (error) { Swal.fire('發送失敗', '請檢查網路或網址', 'error'); }
+                Swal.fire('上傳成功', '熱血戰績已送達 Google 試算表！', 'success');
+            } catch (error) { Swal.fire('上傳失敗', '請檢查網路連線或網址設定', 'error'); }
         }
     </script>
 </body>
